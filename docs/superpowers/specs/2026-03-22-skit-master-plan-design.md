@@ -99,6 +99,7 @@ Each wave is independently valuable. Wave 1 matches competitors. Wave 1.5 borrow
 | `skit doctor` | Health check: broken links, updates, unused sources | Critical |
 | `skit clone <user>` | Clone someone's entire skill setup | Critical |
 | `skit login` | Authenticate with GitHub (for registry, profiles) | Important |
+| `skit logout` | Remove stored credentials | Important |
 | `skit profile push` | Push profile to GitHub gist | Important |
 | `skit profile export` | Export profile JSON to stdout | Important |
 | `skit import <any-url>` | Smart import from gist/raw URL/subfolder | Nice-to-have |
@@ -134,7 +135,7 @@ skit works with ALL Agent Skills-compatible tools from day 1. Users choose their
 | Gemini CLI | `~/.gemini/skills/` | `SKILL.md` | Wave 1 |
 | Custom | User-configured path via `skit config` | `SKILL.md` | Wave 1 |
 
-**Note**: Exact paths for Cursor, Codex, Gemini, and VS Code need verification against current agent docs before implementation. The adapter pattern makes changes trivial.
+**Note**: Exact paths for Cursor, Codex, Gemini, and VS Code need verification against current agent docs before Wave 1B implementation. The adapter pattern makes corrections trivial — a one-line path change per agent.
 
 #### Adapter Interface
 
@@ -456,7 +457,7 @@ $ skit migrate
 
 ### 3.13 Profile & Clone System
 
-`skit profile push` uses `gh` CLI to create/update a gist with filename `skit-profile.json`. `skit clone <user>` resolves the profile:
+`skit profile push` creates/updates a GitHub gist with filename `skit-profile.json` using the stored auth token from `skit login` (GitHub REST API, no `gh` CLI dependency). `skit clone <user>` resolves the profile:
 
 1. If authenticated, check skit registry for user's profile (`GET /api/profiles/<user>`)
 2. Fall back to GitHub API: search user's gists for `skit-profile.json`
@@ -474,7 +475,7 @@ skit-cli/
       init.js, install.js, list.js, remove.js,
       update.js, sync.js, clone.js, doctor.js,
       profile.js, import.js, config.js, login.js,
-      migrate.js,
+      logout.js, migrate.js,
       search.js, publish.js,           (Wave 2)
       translate.js, recommend.js,       (Wave 1.5)
       generate.js                       (Wave 1.5)
@@ -512,7 +513,7 @@ $ skit translate my-skill --to cursorrules
 
 ### 4.2 Recommend
 
-Analyze the current project and suggest skills from the registry:
+Analyze the current project and suggest skills. In Wave 1.5 (before registry), recommendations come from a bundled curated list shipped with the CLI, matched against detected project technologies. In Wave 2+, registry data (install counts, categories) enhances recommendations.
 
 ```
 $ skit recommend
