@@ -9,6 +9,10 @@ const { install } = require('../src/commands/install');
 const { remove } = require('../src/commands/remove');
 const { list } = require('../src/commands/list');
 const { unlink } = require('../src/commands/unlink');
+const { importSkill } = require('../src/commands/import');
+const { update } = require('../src/commands/update');
+const { sync } = require('../src/commands/sync');
+const { doctor } = require('../src/commands/doctor');
 
 const program = new Command();
 
@@ -73,6 +77,34 @@ program
   .description('Remove junction/symlink only, keep source files')
   .action((skill, options) => {
     unlink(skill, options);
+  });
+
+program
+  .command('import <url>')
+  .description('Smart import from gist/GitHub path/raw URL')
+  .action((url, options) => {
+    importSkill(url, options);
+  });
+
+program
+  .command('update [source]')
+  .description('Git pull + re-link (all sources or specific one)')
+  .action((source, options) => {
+    update(source, options);
+  });
+
+program
+  .command('sync')
+  .description('Recreate all junctions from manifest (new machine setup)')
+  .action((options) => {
+    sync(options);
+  });
+
+program
+  .command('doctor')
+  .description('Health check: broken links, missing sources, updates available')
+  .action((options) => {
+    doctor(options);
   });
 
 program.parse(process.argv);
