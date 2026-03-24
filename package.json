@@ -1,0 +1,26 @@
+{
+  "name": "skit",
+  "version": "1.0.0",
+  "description": "A cross-platform package manager for AI agent skills",
+  "main": "src/index.js",
+  "bin": {
+    "skit": "bin/skit.js"
+  },
+  "scripts": {
+    "test": "node --test tests/**/*.test.js"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "skills",
+    "package-manager",
+    "cli"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
+    "inquirer": "^8.2.6",
+    "ora": "^5.4.1"
+  }
+}
