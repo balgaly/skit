@@ -4,6 +4,7 @@
 
 const { Command } = require('commander');
 const { configGet, configSet, VALID_KEYS } = require('../src/commands/config');
+const { link } = require('../src/commands/link');
 
 const program = new Command();
 
@@ -28,6 +29,13 @@ configCmd
   .description(`Set a config value. Valid keys: ${VALID_KEYS.join(', ')}`)
   .action((key, value, options) => {
     configSet(key, value, options);
+  });
+
+program
+  .command('link <path>')
+  .description('Create a junction/symlink for a skill directory into the agent skill directory')
+  .action((skillPath, options) => {
+    link(skillPath, options);
   });
 
 program.parse(process.argv);
