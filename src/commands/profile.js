@@ -227,4 +227,95 @@ async function profileImport(filePath, options = {}) {
   console.log(chalk.dim(`  Skills:  ${skillsLinked} linked, ${skillsSkipped} skipped`));
 }
 
-module.exports = { profileExport, profileImport };
+/**
+ * Compare a profile file against the current manifest and show differences.
+ *
+ * @param {string} filePath — path to the profile JSON file
+ * @param {object} [options]
+ * @param {string} [options.skitHome] — override skit home (for testing)
+ */
+function profileDiff(filePath, options = {}) {
+  const skitHome = options.skitHome || resolveSkitHome();
+  ensureDirs(skitHome);
+
+  // Read and parse the profile file
+  let profile;
+  try {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    profile = JSON.parse(raw);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log(chalk.red(`Error: profile file not found: ${filePath}`));
+    } else {
+      console.log(chalk.red(`Error: failed to parse profile file: ${err.message}`));
+    }
+    return;
+  }
+
+  const profileSkills = profile.skills || [];
+  const localSkills = listSkills(skitHome);
+
+  // Build maps: name -> source
+  const theirMap = new Map();
+  for (const skill of profileSkills) {
+    theirMap.set(skill.name, skill.source);
+  }
+
+  const ourMap = new Map();
+  for (const [name, data] of Object.entries(localSkills)) {
+    ourMap.set(name, data.source);
+  }
+
+  // Find differences
+  const missing = [];    // in profile but not installed
+  const extra = [];      // installed but not in profile
+  const diverged = [];   // same name, different source
+
+  for (const [name, theirSource] of theirMap) {
+    if (!ourMap.has(name)) {
+      missing.push({ name, source: theirSource });
+    } else if (ourMap.get(name) !== theirSource) {
+      diverged.push({ name, ourSource: ourMap.get(name), theirSource });
+    }
+  }
+
+  for (const [name, ourSource] of ourMap) {
+    if (!theirMap.has(name)) {
+      extra.push({ name, source: ourSource });
+    }
+  }
+
+  // Display results
+  const user = profile.user || 'them';
+
+  console.log(chalk.bold(`\n  Skills you're missing (${missing.length}):`));
+  if (missing.length === 0) {
+    console.log(chalk.dim('    (none)'));
+  } else {
+    for (const { name, source } of missing) {
+      console.log(chalk.green(`    + ${name}`) + chalk.dim(`    @${source}`));
+    }
+  }
+
+  console.log(chalk.bold(`\n  Skills only you have (${extra.length}):`));
+  if (extra.length === 0) {
+    console.log(chalk.dim('    (none)'));
+  } else {
+    for (const { name, source } of extra) {
+      console.log(chalk.red(`    - ${name}`) + chalk.dim(`    @${source}`));
+    }
+  }
+
+  console.log(chalk.bold(`\n  Same skills, different source (${diverged.length}):`));
+  if (diverged.length === 0) {
+    console.log(chalk.dim('    (none)'));
+  } else {
+    for (const { name, ourSource, theirSource } of diverged) {
+      console.log(chalk.yellow(`    ~ ${name}`) + chalk.dim(`    yours: @${ourSource}  theirs: @${theirSource}`));
+    }
+  }
+
+  console.log('');
+}
+
+module.exports = { profileExport, profileImport, profileDiff };
