@@ -13,12 +13,15 @@ const { importSkill } = require('../src/commands/import');
 const { update } = require('../src/commands/update');
 const { sync } = require('../src/commands/sync');
 const { doctor } = require('../src/commands/doctor');
+const { profileExport, profileImport, profileDiff, profilePush } = require('../src/commands/profile');
+const { clone } = require('../src/commands/clone');
+const { version } = require('../package.json');
 
 const program = new Command();
 
 program
   .name('skit')
-  .version('1.0.0')
+  .version(version)
   .description('A cross-platform package manager for AI agent skills');
 
 const configCmd = program
@@ -105,6 +108,45 @@ program
   .description('Health check: broken links, missing sources, updates available')
   .action((options) => {
     doctor(options);
+  });
+
+const profileCmd = program
+  .command('profile')
+  .description('Manage and share your skill profile');
+
+profileCmd
+  .command('export')
+  .description('Export current skills as a shareable JSON profile')
+  .action((options) => {
+    profileExport(options);
+  });
+
+profileCmd
+  .command('import <file>')
+  .description('Import skills from a profile JSON file')
+  .action((file, options) => {
+    profileImport(file, options);
+  });
+
+profileCmd
+  .command('diff <file>')
+  .description('Compare a profile against your installed skills')
+  .action((file, options) => {
+    profileDiff(file, options);
+  });
+
+profileCmd
+  .command('push')
+  .description('Publish your profile to a GitHub Gist')
+  .action((options) => {
+    profilePush(options);
+  });
+
+program
+  .command('clone <user-or-url>')
+  .description('Clone another user\'s skill setup from their profile')
+  .action((userOrUrl, options) => {
+    clone(userOrUrl, options);
   });
 
 program.parse(process.argv);
