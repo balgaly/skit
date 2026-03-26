@@ -24,16 +24,22 @@ function isGitUrl(source) {
 }
 
 /**
- * Extract a human-readable repo name from a git URL or path.
- * e.g. "https://github.com/someone/their-skills.git" => "their-skills"
+ * Extract a human-readable source name from a git URL or path.
+ * Uses "owner--repo" for GitHub URLs to avoid generic names like "skills".
+ * e.g. "https://github.com/someone/their-skills.git" => "someone--their-skills"
+ * e.g. "git@github.com:someone/repo.git" => "someone--repo"
  * e.g. "/tmp/foo/remote-skills.git" => "remote-skills"
  */
 function extractRepoName(source) {
-  // Remove trailing slash
+  // Try to extract owner/repo from GitHub URLs
+  const ghMatch = source.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+  if (ghMatch) {
+    return `${ghMatch[1]}--${ghMatch[2]}`;
+  }
+
+  // Fallback: basename without .git
   let cleaned = source.replace(/\/+$/, '');
-  // Get basename
   let base = path.basename(cleaned);
-  // Remove .git suffix
   base = base.replace(/\.git$/, '');
   return base;
 }
@@ -95,18 +101,28 @@ async function install(source, options = {}) {
     sourceDir = targetDir;
   } else {
     // Local path
-    sourceDir = path.resolve(source);
-    sourceName = path.basename(sourceDir);
+    const localDir = path.resolve(source);
+    sourceName = path.basename(localDir);
 
-    if (!fs.existsSync(sourceDir)) {
-      console.log(chalk.red(`Error: path does not exist: ${sourceDir}`));
+    if (!fs.existsSync(localDir)) {
+      console.log(chalk.red(`Error: path does not exist: ${localDir}`));
       return;
     }
 
-    if (!fs.statSync(sourceDir).isDirectory()) {
-      console.log(chalk.red(`Error: not a directory: ${sourceDir}`));
+    if (!fs.statSync(localDir).isDirectory()) {
+      console.log(chalk.red(`Error: not a directory: ${localDir}`));
       return;
     }
+
+    // Link local path into sources/<type>/<name> for a self-contained library
+    const targetDir = path.join(skitHome, 'sources', sourceType, sourceName);
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(path.dirname(targetDir), { recursive: true });
+      const linkType = process.platform === 'win32' ? 'junction' : 'dir';
+      fs.symlinkSync(path.resolve(localDir), targetDir, linkType);
+    }
+
+    sourceDir = localDir;
   }
 
   // Scan for skills
