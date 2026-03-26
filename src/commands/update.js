@@ -68,10 +68,25 @@ async function update(sourceName, options = {}) {
     }
 
     // Pull
+    let spinner;
+    let spinnerAvailable = false;
+    try {
+      const ora = require('ora');
+      spinner = ora(`Updating "${name}"...`).start();
+      spinnerAvailable = true;
+    } catch {
+      // ora not available (testing environment), use plain output
+      console.log(chalk.cyan(`  Updating "${name}"...`));
+    }
+
     try {
       const result = pullRepo(sourceDir);
 
       if (result.updated) {
+        if (spinnerAvailable && spinner) {
+          spinner.succeed(`Updated "${name}" ${chalk.dim(`${shaBefore.slice(0, 7)} -> ${result.sha.slice(0, 7)}`)}`);
+        }
+        // Always log to stdout for test capture
         console.log(
           chalk.green(`  Updated "${name}"`) +
           chalk.dim(` ${shaBefore.slice(0, 7)} -> ${result.sha.slice(0, 7)}`)
@@ -82,10 +97,16 @@ async function update(sourceName, options = {}) {
         manifest.sources[name].sha = result.sha;
         manifest.sources[name].updatedAt = new Date().toISOString();
       } else {
+        if (spinnerAvailable && spinner) {
+          spinner.info(`"${name}" already up to date`);
+        }
         console.log(chalk.dim(`  "${name}" already up to date`));
         upToDateCount++;
       }
     } catch (err) {
+      if (spinnerAvailable && spinner) {
+        spinner.fail(`Error updating "${name}": ${err.message}`);
+      }
       console.log(chalk.red(`  Error updating "${name}": ${err.message}`));
       errorCount++;
     }

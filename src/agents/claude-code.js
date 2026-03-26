@@ -8,6 +8,10 @@ module.exports = {
   name: 'claude-code',
 
   skillDir() {
+    // Allow override via environment variable (for testing)
+    if (process.env.SKIT_AGENT_SKILL_DIR) {
+      return process.env.SKIT_AGENT_SKILL_DIR;
+    }
     return path.join(os.homedir(), '.claude', 'skills');
   },
 

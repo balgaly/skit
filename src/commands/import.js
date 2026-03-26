@@ -47,6 +47,10 @@ async function importSkill(url, options = {}) {
   const agentSkillDir = options.agentSkillDir || getAgentAdapter().skillDir();
   fs.mkdirSync(agentSkillDir, { recursive: true });
 
+  // Security warning for external imports
+  console.log(chalk.yellow(`\n  Warning: Importing skill from external source`));
+  console.log(chalk.dim(`  Review the skill content before using it with sensitive code.\n`));
+
   let detected;
   try {
     detected = detectUrlType(trimmedUrl);

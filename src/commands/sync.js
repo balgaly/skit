@@ -36,6 +36,12 @@ function sync(options = {}) {
   let removed = 0;
   let alreadyLinked = 0;
 
+  // Show progress
+  const totalSkills = Object.keys(skills).length;
+  if (totalSkills > 0) {
+    console.log(chalk.cyan(`\n  Syncing ${totalSkills} skill${totalSkills === 1 ? '' : 's'}...\n`));
+  }
+
   // Step 1: Create missing junctions for skills in manifest
   for (const [skillName, skillData] of Object.entries(skills)) {
     const targetPath = path.join(agentSkillDir, skillName);

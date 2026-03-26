@@ -52,7 +52,7 @@ async function removeSingleSkill(skillName, skitHome, agentSkillDir, options) {
   const sourceName = skillData.source;
   removeSkill(skitHome, skillName);
 
-  console.log(chalk.green(`  Removed ${skillName} from ${agentSkillDir}/`));
+  console.log(chalk.green(`Removed ${skillName} from ${agentSkillDir}`));
 
   // Check if this was the last skill from the source
   if (sourceName) {
@@ -82,14 +82,14 @@ async function removeBySource(sourceName, skitHome, agentSkillDir, options) {
   for (const name of skillNames) {
     const linkPath = path.join(agentSkillDir, name);
     unlinkSkill(linkPath);
-    console.log(chalk.green(`  Removed ${name}`));
+    console.log(chalk.green(`Removed ${name}`));
   }
 
   // Remove source and all its skills from manifest
   removeSource(skitHome, sourceName);
 
   console.log('');
-  console.log(chalk.green(`  Removed source '${sourceName}' (${skillNames.length} skill${skillNames.length === 1 ? '' : 's'})`));
+  console.log(chalk.green(`Removed source '${sourceName}' (${skillNames.length} skill${skillNames.length === 1 ? '' : 's'})`));
 
   // Prompt to delete source directory
   await promptDeleteSource(sourceName, skitHome, options, sourceData);
@@ -137,9 +137,9 @@ async function promptDeleteSource(sourceName, skitHome, options, sourceData) {
   if (shouldDelete) {
     try {
       fs.rmSync(sourcePath, { recursive: true, force: true });
-      console.log(chalk.green(`  Deleted source: ${sourceName}`));
+      console.log(chalk.green(`Deleted source: ${sourceName}`));
     } catch (err) {
-      console.log(chalk.red(`  Failed to delete source directory: ${err.message}`));
+      console.log(chalk.red(`Failed to delete source directory: ${err.message}`));
     }
   }
 

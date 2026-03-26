@@ -69,6 +69,12 @@ async function install(source, options = {}) {
       return;
     }
 
+    // Security warning for external sources
+    if (sourceType === 'external') {
+      console.log(chalk.yellow(`\n  Warning: Installing skills from external source "${sourceName}"`));
+      console.log(chalk.dim(`  Review the skills before using them with sensitive code.\n`));
+    }
+
     let spinner;
     try {
       const ora = require('ora');
