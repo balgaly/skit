@@ -140,14 +140,17 @@ describe('scanForSkills', () => {
     assert.strictEqual(skills[0].name, 'top-skill');
   });
 
-  it('ignores files in the root directory', () => {
-    // Put a SKILL.md directly in the root — not a subdirectory skill
-    fs.writeFileSync(path.join(tmpDir, 'SKILL.md'), '---\nname: root\n---\n');
-    createSkillDir(tmpDir, 'real', { name: 'real', description: 'Real skill' });
+  it('finds SKILL.md at root level (single-skill repos)', () => {
+    fs.writeFileSync(path.join(tmpDir, 'SKILL.md'), '---\nname: root-skill\ndescription: A root skill\n---\n');
+    createSkillDir(tmpDir, 'sub-skill', { name: 'sub-skill', description: 'A sub skill' });
 
     const skills = scanForSkills(tmpDir);
-    assert.strictEqual(skills.length, 1);
-    assert.strictEqual(skills[0].name, 'real');
+    assert.strictEqual(skills.length, 2);
+    const names = skills.map(s => s.name);
+    assert.ok(names.includes('root-skill'));
+    assert.ok(names.includes('sub-skill'));
+    const rootSkill = skills.find(s => s.name === 'root-skill');
+    assert.strictEqual(rootSkill.path, '.');
   });
 
   it('works with the existing test fixture', () => {

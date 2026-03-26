@@ -39,6 +39,19 @@ function scanForSkills(dirPath) {
   const resolvedDir = path.resolve(dirPath);
   const results = [];
 
+  // Check for SKILL.md at root level (single-skill repos)
+  const rootSkillMd = path.join(resolvedDir, 'SKILL.md');
+  if (fs.existsSync(rootSkillMd)) {
+    const content = fs.readFileSync(rootSkillMd, 'utf-8');
+    const frontmatter = parseFrontmatter(content);
+    results.push({
+      name: frontmatter.name || path.basename(resolvedDir),
+      description: frontmatter.description || '',
+      path: '.',
+    });
+  }
+
+  // Check one level deep (multi-skill repos)
   let entries;
   try {
     entries = fs.readdirSync(resolvedDir, { withFileTypes: true });

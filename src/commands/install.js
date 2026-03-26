@@ -180,6 +180,7 @@ async function install(source, options = {}) {
       addSkill(skitHome, skill.name, {
         source: sourceName,
         path: skill.path,
+        description: skill.description || null,
         linkedTo: targetPath,
         installedAt: new Date().toISOString(),
       });
