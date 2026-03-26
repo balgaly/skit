@@ -59,3 +59,21 @@
 - Mock git operations where possible
 - Test cross-platform linking behavior
 - Every command gets at least basic happy-path + error-path tests
+
+## Babysitter
+
+### Recommended Commands
+- `/babysitter:call` — orchestrate complex multi-step tasks
+- `/babysitter:plan` — plan a workflow before executing
+- `/code-reviewer` — automated code review
+
+### Methodology & Processes
+- **Methodology**: GSD (Get Stuff Done)
+- **Processes**: gsd, cli-mcp-development, backend-development
+- **Skills**: TDD, systematic-debugging, verification-before-completion
+
+### CI/CD
+- GitHub Actions configured for tests on push/PR
+
+### Notes
+- Project profile stored in `.a5c/project-profile.json`
