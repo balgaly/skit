@@ -2,10 +2,13 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
+const crypto = require('node:crypto');
+const { execFileSync } = require('node:child_process');
 const chalk = require('chalk');
 
 const { listSkills, listSources, addSource, addSkill, getSkill, getSource } = require('../core/manifest');
-const { readConfig } = require('../core/config');
+const { readConfig, setConfigValue, getConfigValue } = require('../core/config');
 const { cloneRepo } = require('../core/git');
 const { linkSkill } = require('../core/linker');
 const { scanForSkills } = require('../core/scanner');
@@ -318,4 +321,134 @@ function profileDiff(filePath, options = {}) {
   console.log('');
 }
 
-module.exports = { profileExport, profileImport, profileDiff };
+/**
+ * Publish the current skit profile to a GitHub gist via the gh CLI.
+ *
+ * @param {object} [options]
+ * @param {string} [options.skitHome] — override skit home (for testing)
+ * @param {function} [options._mockExecFileSync] — override execFileSync (for testing)
+ */
+function profilePush(options = {}) {
+  const execFileSyncFn = options._mockExecFileSync || execFileSync;
+  const skitHome = options.skitHome || resolveSkitHome();
+  ensureDirs(skitHome);
+
+  const config = readConfig(skitHome);
+  const sources = listSources(skitHome);
+  const skills = listSkills(skitHome);
+
+  // Generate profile JSON (reuse logic from profileExport)
+  const profile = {
+    skit: '1.0',
+    user: config.user || null,
+    exported: new Date().toISOString(),
+    sources: Object.entries(sources).map(([name, data]) => {
+      const entry = { name, type: data.type || 'external' };
+      if (data.origin) {
+        entry.origin = data.origin;
+      }
+      return entry;
+    }),
+    skills: Object.entries(skills).map(([name, data]) => {
+      const entry = { name, source: data.source };
+      if (data.importedFrom) {
+        entry.importedFrom = data.importedFrom;
+      }
+      return entry;
+    }),
+  };
+
+  // Write profile to a temp file
+  const tempFile = path.join(os.tmpdir(), `skit-profile-${crypto.randomUUID()}.json`);
+  fs.writeFileSync(tempFile, JSON.stringify(profile, null, 2), 'utf-8');
+
+  try {
+    // Check if we already have a gist URL (update vs create)
+    const existingGistUrl = getConfigValue(skitHome, 'gistUrl');
+
+    // Build description
+    const skillCount = Object.keys(skills).length;
+    const sourceCount = Object.keys(sources).length;
+    const description = `skit profile for ${config.user || 'user'} - ${skillCount} skills from ${sourceCount} sources`;
+
+    let gistUrl;
+
+    if (existingGistUrl) {
+      // Extract gist ID from URL (e.g., https://gist.github.com/user/abc123 -> abc123)
+      const gistIdMatch = existingGistUrl.match(/gist\.github\.com\/[^\/]+\/([a-zA-Z0-9]+)/);
+      if (!gistIdMatch) {
+        console.log(chalk.red(`Error: Invalid gist URL in config: ${existingGistUrl}`));
+        return;
+      }
+      const gistId = gistIdMatch[1];
+
+      // Update existing gist using gh CLI (secure - uses execFileSync)
+      try {
+        const result = execFileSyncFn(
+          'gh',
+          [
+            'gist', 'edit', gistId,
+            '--filename', 'skit-profile.json',
+            '--desc', description,
+            tempFile
+          ],
+          { encoding: 'utf-8' }
+        );
+        gistUrl = existingGistUrl; // Keep the same URL
+        console.log(chalk.green(`\n  Updated profile gist: ${gistUrl}`));
+      } catch (err) {
+        if (err.code === 'ENOENT') {
+          console.log(chalk.red('\n  Error: GitHub CLI (gh) not found.'));
+          console.log(chalk.dim('  Install it from: https://cli.github.com'));
+          return;
+        }
+        console.log(chalk.red(`\n  Error updating gist: ${err.message}`));
+        return;
+      }
+    } else {
+      // Create new gist using gh CLI (secure - uses execFileSync)
+      try {
+        const result = execFileSyncFn(
+          'gh',
+          [
+            'gist', 'create',
+            '--public',
+            '--filename', 'skit-profile.json',
+            '--desc', description,
+            tempFile
+          ],
+          { encoding: 'utf-8' }
+        );
+        gistUrl = result.toString().trim();
+
+        // Store the gist URL in config for future updates
+        setConfigValue(skitHome, 'gistUrl', gistUrl);
+
+        console.log(chalk.green(`\n  Published profile gist: ${gistUrl}`));
+      } catch (err) {
+        if (err.code === 'ENOENT') {
+          console.log(chalk.red('\n  Error: GitHub CLI (gh) not found.'));
+          console.log(chalk.dim('  Install it from: https://cli.github.com'));
+          return;
+        }
+        console.log(chalk.red(`\n  Error creating gist: ${err.message}`));
+        return;
+      }
+    }
+
+    // Print shareable command
+    if (config.user) {
+      console.log(chalk.dim(`\n  Share your profile:\n  ${chalk.cyan(`npx skit clone ${config.user}`)}`));
+    }
+    console.log('');
+  } finally {
+    // Clean up temp file
+    try {
+      fs.unlinkSync(tempFile);
+    } catch {
+      // Ignore cleanup errors
+    }
+  }
+}
+
+module.exports = { profileExport, profileImport, profileDiff, profilePush };
