@@ -1,11 +1,28 @@
-# skit
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo-light.svg">
+    <img alt="skit" src="docs/assets/logo-dark.svg" width="400">
+  </picture>
+</p>
 
-> A cross-platform package manager for AI agent skills
+<p align="center">
+  <strong>The package manager for AI agent skills.</strong><br>
+  Install, organize, and share skills across Claude Code, Cursor, Windsurf, and more.
+</p>
 
-[![npm version](https://img.shields.io/npm/v/skit.svg)](https://www.npmjs.com/package/skit)
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+<p align="center">
+  <a href="https://www.npmjs.com/package/skit"><img src="https://img.shields.io/npm/v/skit.svg?style=flat-square&color=6C63FF" alt="npm version"></a>
+  <a href="https://opensource.org/licenses/ISC"><img src="https://img.shields.io/badge/license-ISC-blue.svg?style=flat-square" alt="License: ISC"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/node/v/skit?style=flat-square&color=3B82F6" alt="Node.js"></a>
+  <a href="#supported-agents"><img src="https://img.shields.io/badge/agents-Claude_Code_%7C_Cursor_%7C_Windsurf-22D3EE?style=flat-square" alt="Agents"></a>
+</p>
 
-**"npm for AI agent skills. Install, organize, and update skills from any source."**
+---
+
+<p align="center">
+  <img src="docs/assets/hero-demo.gif" alt="skit install demo" width="720">
+</p>
 
 ---
 
@@ -21,7 +38,7 @@ skit install https://github.com/someone/their-skills
 # Clone someone's entire skill setup
 npx skit clone snir
 
-# List all installed skills
+# List what you have
 skit list
 ```
 
@@ -29,14 +46,17 @@ skit list
 
 ## Why skit?
 
-AI coding agents (Claude Code, Cursor, Windsurf) support custom skills, but managing them is messy. `skit` fixes this:
+AI coding agents support custom skills and rules, but there's no standard way to find, install, share, or update them. skit fixes that.
 
-- **Cross-platform**: Works seamlessly on Windows (junctions), macOS, and Linux (symlinks)
-- **Multi-source**: Install from GitHub repos, local folders, gists, or raw URLs
-- **Version control**: Track every skill's origin, version, and updates
-- **One-command sharing**: `skit clone <user>` lets you instantly replicate anyone's skill setup
-- **Smart imports**: Automatically detect and install skills from any URL
-- **Health checks**: Detect broken links, missing sources, and available updates
+**Cross-platform** — Works on Windows (NTFS junctions), macOS, and Linux (symlinks). No admin rights required.
+
+**Multi-agent** — Ships with a Claude Code adapter today. Cursor, Windsurf, and VS Code adapters are ~20 lines each.
+
+**Version-tracked** — Every skill knows its origin, version, and update status. Run `skit update` to pull the latest.
+
+**One-command sharing** — `skit clone <user>` replicates anyone's entire skill setup instantly.
+
+**Smart imports** — Paste any URL. skit auto-detects GitHub repos, subfolder paths, gists, and raw files.
 
 ---
 
@@ -44,165 +64,143 @@ AI coding agents (Claude Code, Cursor, Windsurf) support custom skills, but mana
 
 | Command | Description |
 |---------|-------------|
-| `skit install <url>` | Clone repo, scan for skills, interactive picker, link selected |
-| `skit install <local-path>` | Register local folder as source, link skills |
-| `skit import <any-url>` | Smart import from gist/GitHub path/raw URL |
-| `skit remove <skill>` | Remove junction, prompt if last skill from source |
+| `skit install <url\|path>` | Clone repo or register local folder, scan for skills, interactive picker |
+| `skit import <any-url>` | Smart import from gist, GitHub subfolder, or raw URL |
+| `skit remove <skill>` | Remove a skill (prompts if last skill from source) |
 | `skit remove --source <name>` | Remove all skills from a source |
 | `skit list` | Show all skills grouped by source |
-| `skit list --source <name>` | Filter by source |
-| `skit update [source]` | Git pull + re-link (all sources or specific one) |
-| `skit sync` | Recreate all junctions from manifest (new machine setup) |
-| `skit clone <user>` | Fetch user's profile, install everything |
-| `skit clone <url>` | Fetch profile from URL, install everything |
-| `skit profile export` | Export manifest as shareable profile JSON to stdout |
-| `skit profile import <file>` | Apply a profile (install missing, prompt for conflicts) |
-| `skit profile diff <file-or-user>` | Show what they have that you don't |
-| `skit profile push` | Publish profile to GitHub gist (requires `gh` CLI) |
-| `skit doctor` | Health check: broken links, missing sources, updates available |
-| `skit link <path>` | Low-level: create junction for one skill directory |
-| `skit unlink <skill>` | Low-level: remove junction only, keep source |
-| `skit config set <key> <value>` | Set config (agent, user, skitHome) |
+| `skit update [source]` | Git pull + re-link (all sources or one) |
+| `skit sync` | Recreate all links from manifest (new machine setup) |
+| `skit clone <user\|url>` | Fetch profile, install everything |
+| `skit profile export` | Export your setup as shareable JSON |
+| `skit profile import <file>` | Apply a profile with conflict resolution |
+| `skit profile diff <file\|user>` | Show what they have that you don't |
+| `skit profile push` | Publish profile to GitHub Gist (requires `gh`) |
+| `skit doctor` | Health check: broken links, missing sources, updates |
+| `skit link <path>` | Low-level: create link for one skill directory |
+| `skit unlink <skill>` | Low-level: remove link only, keep source |
+| `skit config set <key> <val>` | Set config (agent, user, skitHome) |
 | `skit config get <key>` | Get config value |
-
----
-
-## Supported Agents
-
-- **Claude Code** (default) — `~/.claude/skills/`
-- **Extensible design** — adding new agents is ~20 lines of code
-
-Future agents (community contributions welcome):
-- Cursor
-- Windsurf
-- VS Code extensions
-- Any AI agent with a skill/rule directory
-
----
-
-## Profile & Clone (The Viral Feature)
-
-Share your entire skill setup in one command:
-
-```bash
-# Export your profile
-skit profile export > my-skills.json
-
-# Or publish it as a GitHub Gist
-skit profile push
-
-# Anyone can now clone your setup
-npx skit clone your-github-username
-```
-
-`skit clone` automatically:
-- Fetches the profile from GitHub Gists
-- Clones all source repositories
-- Installs all skills with interactive conflict resolution
-- Sets up your agent directory with junctions/symlinks
-
-**Growth engine**: One user shares their profile, dozens install it instantly.
-
----
-
-## Cross-Platform Linking
-
-`skit` uses filesystem links to keep skills organized without duplicating files:
-
-- **Windows**: NTFS junctions (no admin rights required)
-- **macOS/Linux**: Directory symlinks
-
-Your agent sees skills in `~/.claude/skills/`, but they actually live in `~/.skit/sources/` where they're tracked, versioned, and updatable.
 
 ---
 
 ## How It Works
 
+skit keeps skills in a central library (`~/.skit/`) and creates filesystem links into your agent's skill directory. Your agent sees the skills exactly where it expects them, but skit tracks everything behind the scenes.
+
 ```
 ~/.skit/
-├── config.json          # Agent, username, home directory
-├── manifest.json        # Single source of truth for all skills
+├── config.json              # Agent, username, preferences
+├── manifest.json            # Single source of truth
 ├── sources/
-│   ├── own/             # Your repos (you author these)
-│   │   └── my-skills/   # git repo clone
-│   └── external/        # Everything from elsewhere
-│       ├── their-skills/
-│       └── _standalone/ # from import (gists, URLs)
-└── profiles/            # Cached imported profiles
+│   ├── own/                 # Your repos (--own flag)
+│   │   └── my-skills/
+│   └── external/            # Third-party repos
+│       ├── someone--skills/
+│       └── _standalone/     # From skit import
+└── profiles/                # Cached profiles
 
-~/.claude/skills/        # Agent target (junctions/symlinks ONLY)
-├── skill-1 → ~/.skit/sources/own/my-skills/skill-1
-├── skill-2 → ~/.skit/sources/external/their-skills/skill-2
-└── skill-3 → ~/.skit/sources/external/_standalone/skill-3
+~/.claude/skills/            # Agent target (links only)
+├── code-reviewer → ~/.skit/sources/external/someone--skills/code-reviewer
+├── my-tool       → ~/.skit/sources/own/my-skills/my-tool
+└── quick-doc     → ~/.skit/sources/external/_standalone/quick-doc
 ```
+
+**Windows**: NTFS junctions (no elevation needed) · **macOS/Linux**: directory symlinks
+
+---
+
+## Install from GitHub
+
+```bash
+$ skit install https://github.com/someone/their-skills
+```
+
+<img src="docs/assets/hero-demo.gif" alt="skit install" width="680">
+
+skit clones the repo, scans for skills (directories containing `SKILL.md`), and presents an interactive picker. Selected skills are linked into your agent's skill directory.
+
+---
+
+## List Your Skills
+
+```bash
+$ skit list
+```
+
+<img src="docs/assets/list-demo.gif" alt="skit list" width="680">
+
+Skills are grouped by source with their descriptions. Own sources are highlighted separately from external ones.
+
+---
+
+## Clone a Profile
+
+The viral feature. One command to replicate anyone's skill setup:
+
+```bash
+$ npx skit clone snir
+```
+
+<img src="docs/assets/clone-demo.gif" alt="skit clone" width="680">
+
+`skit clone` fetches the user's profile from GitHub Gists, clones all source repos, and installs every skill. Share your profile with `skit profile push`.
 
 ---
 
 ## Smart Import
 
-`skit import` detects and handles multiple URL formats:
+`skit import` handles any URL format:
 
 ```bash
-# Full GitHub repo → delegates to install
+# Full repo → delegates to install
 skit import https://github.com/user/repo
 
-# GitHub subfolder → installs just that skill
+# Subfolder → installs just that skill
 skit import https://github.com/user/repo/tree/main/skills/my-skill
 
-# GitHub Gist → downloads all files as a skill
+# Gist → downloads files as a standalone skill
 skit import https://gist.github.com/user/abc123
 
-# Raw URL → wraps as a standalone skill
+# Raw URL → wraps as standalone skill
 skit import https://raw.githubusercontent.com/user/repo/main/skill.md
 ```
 
 ---
 
-## Examples
+## Supported Agents
 
-### Install from GitHub
+| Agent | Status | Skill Directory |
+|-------|--------|-----------------|
+| **Claude Code** | Supported | `~/.claude/skills/` |
+| **Cursor** | Planned | `~/.cursor/rules/` |
+| **Windsurf** | Planned | `~/.windsurf/rules/` |
+| **VS Code** | Planned | TBD |
 
-```bash
-$ skit install https://github.com/someone/their-skills
+Adding a new agent adapter is ~20 lines. See `src/agents/claude-code.js` for the pattern.
 
-  Cloning someone/their-skills...
-  Found 5 skills:
+---
 
-  [x] cool-skill      - Use when reviewing PRs for security issues
-  [ ] another-skill   - Use when generating changelogs
-  [x] test-runner     - Use when running test suites
+## Skill Format
 
-  Space to toggle, Enter to confirm, A to select all
+A skill is a directory containing a `SKILL.md` file with optional YAML frontmatter:
 
-  Installed 2 skills from their-skills
-    cool-skill    -> ~/.claude/skills/cool-skill
-    test-runner   -> ~/.claude/skills/test-runner
+```markdown
+---
+name: my-skill
+description: Use when the user wants to do X
+---
+
+# My Skill
+
+Instructions for the AI agent...
 ```
 
-### Clone a Profile
+skit scans for skills at the repo root, one level deep, and in well-known subdirectories (`skills/`, `commands/`, `agents/`).
 
-```bash
-$ npx skit clone snir
+---
 
-  Fetching snir's profile...
-  Found 8 skills from 3 sources:
-
-  snirs-skills (4 skills)
-    view-md, split, code-reviewer, ship
-
-  their-skills (2 skills)
-    cool-skill, test-runner
-
-  standalone (2 skills)
-    pr-helper, quick-docs
-
-  Install all 8 skills? (Y/n/pick)
-
-  Cloned 3 sources, installed 8 skills
-  Your setup now matches snir's profile
-```
-
-### Health Check
+## Health Check
 
 ```bash
 $ skit doctor
@@ -210,33 +208,49 @@ $ skit doctor
   Checking 8 skills...
 
   Broken links:
-    pr-helper -> source missing (sources/external/_standalone/pr-helper)
+    pr-helper → source missing
 
   Updates available:
-    their-skills: 3 commits behind (d4e5f6a -> b7c8d9e)
-    snirs-skills: up to date
-
-  Unused sources:
-    old-tools: cloned but no skills installed
+    their-skills: 3 commits behind
 
   1 issue found. Run 'skit sync' to fix broken links.
 ```
 
 ---
 
-## License
+## Comparison
 
-ISC
+| Feature | skit | AGR | skills-manager |
+|---------|------|-----|----------------|
+| Cross-platform | Windows + macOS + Linux | macOS + Linux | macOS + Linux |
+| Install source | Git repos, gists, URLs, local | Git repos | Local only |
+| Multi-agent | Claude Code + extensible | Claude Code only | Claude Code only |
+| Profile sharing | `skit clone <user>` | — | — |
+| Smart import | Any URL auto-detected | — | — |
+| Version tracking | Full manifest | — | — |
+| Interactive picker | Checkbox UI | — | GUI |
+| Package manager | npm | pip | Tauri binary |
 
 ---
 
 ## Contributing
 
-Issues and PRs welcome! This is v1.0 — there's lots of room to grow.
+Issues and PRs welcome. This is v1 — there's lots of room to grow.
 
 **Roadmap**:
-- Interactive TUI browser (`npx skit`)
-- Community registry with trending/popular skills
+- Community registry with search and trending skills
 - Additional agent adapters (Cursor, Windsurf, VS Code)
+- `skit init` scaffolding for new skill repos
+- Interactive TUI browser
 
-See `docs/design.md` for the full specification.
+See [`docs/design.md`](docs/design.md) for the full specification.
+
+---
+
+## Credits
+
+Terminal demo GIFs created with [command-giffer](https://github.com/balgaly/command-giffer).
+
+## License
+
+[ISC](LICENSE)
