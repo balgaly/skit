@@ -49,7 +49,7 @@
 ## Git Conventions
 
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`
-- Work on feature branches, merge to main
+- Work on feature branches, merge to master
 - Include `Co-Authored-By: Claude <noreply@anthropic.com>` in commits
 
 ## Testing
