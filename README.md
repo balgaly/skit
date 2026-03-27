@@ -44,19 +44,27 @@ skit list
 
 ---
 
-## Why skit?
+## Why do I need this?
 
-AI coding agents support custom skills and rules, but there's no standard way to find, install, share, or update them. skit fixes that.
+**Your skills are a mess.** You've got markdown files scattered across `~/.claude/skills/`, some copied from GitHub, some you wrote, some a colleague sent on Slack. Half are outdated. You have no idea where they came from or if there's a newer version.
 
-**Cross-platform** — Works on Windows (NTFS junctions), macOS, and Linux (symlinks). No admin rights required.
+**You can't share your setup.** A teammate asks "what skills do you use?" and you end up zipping folders and writing instructions. When someone shares a great skill repo, everyone manually clones it and copies files around.
 
-**Multi-agent** — Ships with a Claude Code adapter today. Cursor, Windsurf, and VS Code adapters are ~20 lines each.
+**Switching machines is painful.** New laptop? Re-download everything. Reinstall from that gist you bookmarked 3 months ago. Hope you remember which skills you had.
 
-**Version-tracked** — Every skill knows its origin, version, and update status. Run `skit update` to pull the latest.
+**You use multiple agents.** Claude Code today, Cursor tomorrow, maybe Windsurf for a side project. Each has its own skill directory. You're maintaining the same skills in 3 places.
 
-**One-command sharing** — `skit clone <user>` replicates anyone's entire skill setup instantly.
+**Skills break silently.** The repo you cloned 2 months ago got updated. Your local copy is stale. You don't know, and there's no way to check without visiting every GitHub repo manually.
 
-**Smart imports** — Paste any URL. skit auto-detects GitHub repos, subfolder paths, gists, and raw files.
+skit solves all of this:
+
+- **`skit install <url>`** — Install from GitHub, gists, or local folders. Scans for skills automatically.
+- **`skit update`** — One command to pull the latest version of every skill.
+- **`skit clone <user>`** — Replicate anyone's entire setup in seconds.
+- **`skit sync`** — New machine? One command to recreate everything from your manifest.
+- **`skit doctor`** — Find broken links, stale sources, and available updates.
+- **Cross-platform** — Windows (NTFS junctions), macOS, and Linux (symlinks). No admin rights.
+- **Multi-agent** — Claude Code today, with Cursor and Windsurf adapters coming.
 
 ---
 

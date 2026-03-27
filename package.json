@@ -14,9 +14,32 @@
     "agent",
     "skills",
     "package-manager",
-    "cli"
+    "cli",
+    "claude",
+    "cursor",
+    "windsurf",
+    "symlink",
+    "cross-platform"
   ],
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/balgaly/skit.git"
+  },
+  "homepage": "https://github.com/balgaly/skit",
+  "bugs": {
+    "url": "https://github.com/balgaly/skit/issues"
+  },
+  "author": "Snir Balgaly",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
