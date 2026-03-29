@@ -15,6 +15,7 @@ const { sync } = require('../src/commands/sync');
 const { doctor } = require('../src/commands/doctor');
 const { profileExport, profileImport, profileDiff, profilePush } = require('../src/commands/profile');
 const { clone } = require('../src/commands/clone');
+const { incognitoOn, incognitoOff, incognitoStatus, incognitoAllow } = require('../src/commands/incognito');
 const { version } = require('../package.json');
 
 const program = new Command();
@@ -148,5 +149,29 @@ program
   .action((userOrUrl, options) => {
     clone(userOrUrl, options);
   });
+
+const incognitoCmd = program
+  .command('incognito')
+  .description('Open this project with a clean slate — global skills stay home');
+
+incognitoCmd
+  .command('on')
+  .description('Enable incognito mode for this project')
+  .action(() => { incognitoOn(); });
+
+incognitoCmd
+  .command('off')
+  .description('Disable incognito mode for this project')
+  .action(() => { incognitoOff(); });
+
+incognitoCmd
+  .command('status')
+  .description('Show whether incognito mode is on for this project')
+  .action(() => { incognitoStatus(); });
+
+incognitoCmd
+  .command('allow <name>')
+  .description('Allow a skill (e.g. ship) or plugin (e.g. superpowers@claude-plugins-official) in this project')
+  .action((name) => { incognitoAllow(name); });
 
 program.parse(process.argv);
