@@ -3,6 +3,7 @@
 const chalk = require('chalk');
 const { resolveSkitHome, ensureDirs } = require('../index');
 const { getConfigValue, setConfigValue } = require('../core/config');
+const { listAdapters } = require('../agents/index');
 
 const VALID_KEYS = ['agent', 'user', 'skitHome'];
 
@@ -39,6 +40,14 @@ function configSet(key, value, options) {
   if (!VALID_KEYS.includes(key)) {
     console.log(chalk.red(`Invalid config key: "${key}". Valid keys: ${VALID_KEYS.join(', ')}`));
     return;
+  }
+
+  if (key === 'agent') {
+    const valid = listAdapters();
+    if (!valid.includes(value)) {
+      console.log(chalk.red(`Unknown agent: "${value}". Available: ${valid.join(', ')}`));
+      return;
+    }
   }
 
   const skitHome = resolveSkitHome();

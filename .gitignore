@@ -2,3 +2,6 @@ node_modules/
 .workspace/
 .a5c/
 .playwright-mcp/
+.claude/
+PROMPT.md
+docs/superpowers/
