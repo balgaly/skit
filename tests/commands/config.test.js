@@ -73,6 +73,17 @@ describe('skit config set', () => {
     const output = await captureStdout(() => configSet('invalidKey', 'value', {}));
     assert.ok(output.includes('Invalid'), `Expected error about invalid key, got: ${output}`);
   });
+
+  it('shows error for unknown agent value', async () => {
+    const output = await captureStdout(() => configSet('agent', 'windsurf', {}));
+    assert.ok(output.includes('Unknown agent'), `Expected error about unknown agent, got: ${output}`);
+  });
+
+  it('does not persist an unknown agent value', async () => {
+    await configSet('agent', 'windsurf', {});
+    const output = await captureStdout(() => configGet('agent', {}));
+    assert.ok(!output.includes('windsurf'), `Expected windsurf not to be stored, got: ${output}`);
+  });
 });
 
 describe('skit config get', () => {
@@ -95,9 +106,9 @@ describe('skit config get', () => {
   });
 
   it('prints value to stdout', async () => {
-    await configSet('agent', 'gemini', {});
+    await configSet('agent', 'cursor', {});
     const output = await captureStdout(() => configGet('agent', {}));
-    assert.ok(output.includes('gemini'), `Expected "gemini" in output, got: ${output}`);
+    assert.ok(output.includes('cursor'), `Expected "cursor" in output, got: ${output}`);
   });
 
   it('shows appropriate output for missing/unset key', async () => {
