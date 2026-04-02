@@ -43,7 +43,8 @@ AI coding agents (Claude Code, Cursor, Windsurf) support user-authored skills/ru
 | `skit doctor` | v1.0 | Health checks |
 | Interactive TUI browser (`npx skit`) | v1.1 | Community registry (JSON on GitHub) |
 | Trending/popular skills | v2.0 | Needs adoption data |
-| Additional agent adapters (Cursor, Windsurf) | v1.x | As demand emerges |
+| Cursor agent adapter | v1.x | Implemented |
+| Windsurf agent adapter | v1.x | As demand emerges |
 
 ---
 
@@ -405,17 +406,50 @@ module.exports = {
 };
 ```
 
-### 7.3 Future Adapters (not v1)
+### 7.3 Cursor Adapter (v1.x)
+
+Skills link into `~/.cursor/rules/`. Accepts both `SKILL.md` (cross-agent) and `.cursorrules` (Cursor-native) as skill markers.
 
 ```javascript
 // agents/cursor.js
 module.exports = {
   name: 'cursor',
-  skillDir: () => path.join(os.homedir(), '.cursor', 'rules'),
-  detectSkill: (dir) => fs.existsSync(path.join(dir, '.cursorrules')),
-  getSkillMeta: (dir) => parseCursorRules(path.join(dir, '.cursorrules')),
+
+  skillDir() {
+    if (process.env.SKIT_AGENT_SKILL_DIR) return process.env.SKIT_AGENT_SKILL_DIR;
+    return path.join(os.homedir(), '.cursor', 'rules');
+  },
+
+  detectSkill(dir) {
+    return fs.existsSync(path.join(dir, 'SKILL.md')) ||
+           fs.existsSync(path.join(dir, '.cursorrules'));
+  },
+
+  getSkillMeta(dir) {
+    const skillMd = path.join(dir, 'SKILL.md');
+    if (fs.existsSync(skillMd)) {
+      const fm = parseFrontmatter(fs.readFileSync(skillMd, 'utf-8'));
+      return { name: fm.name || path.basename(dir), description: fm.description || '' };
+    }
+    return { name: path.basename(dir), description: '' };
+  },
 };
 ```
+
+Switch to Cursor:
+
+```bash
+skit config set agent cursor
+```
+
+### 7.4 Future Adapters
+
+| Agent | Status | Skill Directory |
+|-------|--------|-----------------|
+| Claude Code | Implemented (v1.0) | `~/.claude/skills/` |
+| Cursor | Implemented (v1.x) | `~/.cursor/rules/` |
+| Windsurf | Planned | `~/.windsurf/rules/` |
+| VS Code | Planned | TBD |
 
 Adding a new agent = ~20 lines implementing the interface.
 
@@ -522,7 +556,8 @@ skit/
 │   │   └── config.js
 │   ├── agents/                # Agent adapters
 │   │   ├── index.js           # Adapter loader
-│   │   └── claude-code.js
+│   │   ├── claude-code.js
+│   │   └── cursor.js
 │   ├── core/
 │   │   ├── manifest.js        # Read/write manifest.json
 │   │   ├── config.js          # Read/write config.json

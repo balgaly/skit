@@ -64,7 +64,7 @@ skit solves all of this:
 - **`skit sync`** — New machine? One command to recreate everything from your manifest.
 - **`skit doctor`** — Find broken links, stale sources, and available updates.
 - **Cross-platform** — Windows (NTFS junctions), macOS, and Linux (symlinks). No admin rights.
-- **Multi-agent** — Claude Code today, with Cursor and Windsurf adapters coming.
+- **Multi-agent** — Claude Code and Cursor supported today, with Windsurf coming.
 
 ---
 
@@ -181,11 +181,18 @@ skit import https://raw.githubusercontent.com/user/repo/main/skill.md
 | Agent | Status | Skill Directory |
 |-------|--------|-----------------|
 | **Claude Code** | Supported | `~/.claude/skills/` |
-| **Cursor** | Planned | `~/.cursor/rules/` |
+| **Cursor** | Supported | `~/.cursor/rules/` |
 | **Windsurf** | Planned | `~/.windsurf/rules/` |
 | **VS Code** | Planned | TBD |
 
-Adding a new agent adapter is ~20 lines. See `src/agents/claude-code.js` for the pattern.
+Switch agents with:
+
+```bash
+skit config set agent cursor     # use Cursor
+skit config set agent claude-code # use Claude Code (default)
+```
+
+Adding a new agent adapter is ~20 lines. See `src/agents/` for examples.
 
 ---
 
@@ -247,7 +254,7 @@ Issues and PRs welcome. This is v1 — there's lots of room to grow.
 
 **Roadmap**:
 - Community registry with search and trending skills
-- Additional agent adapters (Cursor, Windsurf, VS Code)
+- Additional agent adapters (Windsurf, VS Code)
 - `skit init` scaffolding for new skill repos
 - Interactive TUI browser
 
