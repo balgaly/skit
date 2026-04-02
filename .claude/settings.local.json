@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git:*)",
-      "WebFetch(domain:docs.anthropic.com)",
-      "WebFetch(domain:www.npmjs.com)"
-    ]
-  }
-}

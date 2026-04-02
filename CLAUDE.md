@@ -26,9 +26,11 @@
 
 - `src/commands/` — one file per CLI command, each exports a function
 - `src/core/` — shared business logic (manifest, linker, git, scanner, importer)
-- `src/agents/` — pluggable agent adapters (v1: claude-code only)
-- `src/ui/` — terminal UI helpers (picker, spinner, formatting)
+- `src/agents/` — pluggable agent adapters (claude-code, cursor; add new ones with ~20 lines)
 - `bin/skit.js` — entry point, wires commands to commander
+
+> `src/ui/` is planned (picker, spinner, formatting helpers) but not yet extracted.
+> UI logic (chalk, inquirer, ora) is currently inline in each command file.
 
 ## Dependencies (keep minimal)
 
@@ -73,7 +75,7 @@
 - **Skills**: TDD, systematic-debugging, verification-before-completion
 
 ### CI/CD
-- GitHub Actions configured for tests on push/PR
+- GitHub Actions not yet configured (run `node --test tests/**/*.test.js` locally)
 
 ### Notes
 - Project profile stored in `.a5c/project-profile.json`

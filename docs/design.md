@@ -41,6 +41,7 @@ AI coding agents (Claude Code, Cursor, Windsurf) support user-authored skills/ru
 | `skit clone <user>` | v1.0 | Growth engine via GitHub gists |
 | `skit profile export/import/diff/push` | v1.0 | Powers clone |
 | `skit doctor` | v1.0 | Health checks |
+| [`skit incognito`](INCOGNITO-MODE.md) — per-project plugin quarantine | v1.x | In progress |
 | Interactive TUI browser (`npx skit`) | v1.1 | Community registry (JSON on GitHub) |
 | Trending/popular skills | v2.0 | Needs adoption data |
 | Cursor agent adapter | v1.x | Implemented |
