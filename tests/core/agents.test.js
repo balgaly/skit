@@ -6,6 +6,7 @@ const os = require('node:os');
 
 const claudeCode = require('../../src/agents/claude-code');
 const cursor = require('../../src/agents/cursor');
+const windsurf = require('../../src/agents/windsurf');
 const { getAdapter, listAdapters } = require('../../src/agents/index');
 
 const fixtureSkillDir = path.join(__dirname, '..', 'fixtures', 'mock-skills', 'test-skill');
@@ -116,6 +117,71 @@ describe('cursor adapter', () => {
   });
 });
 
+describe('windsurf adapter', () => {
+  it('has correct name', () => {
+    assert.strictEqual(windsurf.name, 'windsurf');
+  });
+
+  it('skillDir() returns path containing .windsurf/rules', () => {
+    const dir = windsurf.skillDir();
+    const expected = path.join(os.homedir(), '.windsurf', 'rules');
+    assert.strictEqual(dir, expected);
+  });
+
+  it('skillDir() respects SKIT_AGENT_SKILL_DIR env override', () => {
+    const override = path.join(os.tmpdir(), 'skit-windsurf-test-override');
+    process.env.SKIT_AGENT_SKILL_DIR = override;
+    try {
+      assert.strictEqual(windsurf.skillDir(), override);
+    } finally {
+      delete process.env.SKIT_AGENT_SKILL_DIR;
+    }
+  });
+
+  it('detectSkill() returns true for dir with SKILL.md', () => {
+    assert.strictEqual(windsurf.detectSkill(fixtureSkillDir), true);
+  });
+
+  it('detectSkill() returns true for dir with .windsurfrules', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skit-windsurf-detect-'));
+    try {
+      fs.writeFileSync(path.join(tmpDir, '.windsurfrules'), '# windsurf rules');
+      assert.strictEqual(windsurf.detectSkill(tmpDir), true);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('detectSkill() returns false for dir with neither SKILL.md nor .windsurfrules', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skit-windsurf-empty-'));
+    try {
+      assert.strictEqual(windsurf.detectSkill(tmpDir), false);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('getSkillMeta() extracts name and description from SKILL.md frontmatter', () => {
+    const meta = windsurf.getSkillMeta(fixtureSkillDir);
+    assert.strictEqual(meta.name, 'test-skill');
+    assert.strictEqual(meta.description, 'A test skill for testing');
+  });
+
+  it('getSkillMeta() falls back to dir name when only .windsurfrules present', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skit-windsurf-meta-'));
+    const skillDir = path.join(tmpDir, 'my-windsurf-skill');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(path.join(skillDir, '.windsurfrules'), '# windsurf rules');
+    try {
+      const meta = windsurf.getSkillMeta(skillDir);
+      assert.strictEqual(meta.name, 'my-windsurf-skill');
+      assert.strictEqual(meta.description, '');
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('adapter loader', () => {
   it('getAdapter("claude-code") returns the claude-code adapter', () => {
     const adapter = getAdapter('claude-code');
@@ -127,14 +193,20 @@ describe('adapter loader', () => {
     assert.throws(() => getAdapter('unknown'), /Unknown agent adapter: "unknown"/);
   });
 
-  it('listAdapters() returns ["claude-code", "cursor"]', () => {
+  it('listAdapters() returns ["claude-code", "cursor", "windsurf"]', () => {
     const adapters = listAdapters();
-    assert.deepStrictEqual(adapters, ['claude-code', 'cursor']);
+    assert.deepStrictEqual(adapters, ['claude-code', 'cursor', 'windsurf']);
   });
 
   it('getAdapter("cursor") returns the cursor adapter', () => {
     const adapter = getAdapter('cursor');
     assert.strictEqual(adapter.name, 'cursor');
     assert.strictEqual(adapter, cursor);
+  });
+
+  it('getAdapter("windsurf") returns the windsurf adapter', () => {
+    const adapter = getAdapter('windsurf');
+    assert.strictEqual(adapter.name, 'windsurf');
+    assert.strictEqual(adapter, windsurf);
   });
 });

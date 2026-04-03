@@ -64,7 +64,7 @@ skit solves all of this:
 - **`skit sync`** — New machine? One command to recreate everything from your manifest.
 - **`skit doctor`** — Find broken links, stale sources, and available updates.
 - **Cross-platform** — Windows (NTFS junctions), macOS, and Linux (symlinks). No admin rights.
-- **Multi-agent** — Claude Code and Cursor supported today, with Windsurf coming.
+- **Multi-agent** — Claude Code, Cursor, and Windsurf supported. VS Code coming.
 
 ---
 
@@ -182,13 +182,14 @@ skit import https://raw.githubusercontent.com/user/repo/main/skill.md
 |-------|--------|-----------------|
 | **Claude Code** | Supported | `~/.claude/skills/` |
 | **Cursor** | Supported | `~/.cursor/rules/` |
-| **Windsurf** | Planned | `~/.windsurf/rules/` |
+| **Windsurf** | Supported | `~/.windsurf/rules/` |
 | **VS Code** | Planned | TBD |
 
 Switch agents with:
 
 ```bash
-skit config set agent cursor     # use Cursor
+skit config set agent cursor      # use Cursor
+skit config set agent windsurf    # use Windsurf
 skit config set agent claude-code # use Claude Code (default)
 ```
 
@@ -254,7 +255,7 @@ Issues and PRs welcome. This is v1 — there's lots of room to grow.
 
 **Roadmap**:
 - Community registry with search and trending skills
-- Additional agent adapters (Windsurf, VS Code)
+- VS Code agent adapter
 - `skit init` scaffolding for new skill repos
 - Interactive TUI browser
 

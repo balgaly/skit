@@ -1,6 +1,7 @@
 const adapters = {
   'claude-code': require('./claude-code'),
   'cursor': require('./cursor'),
+  'windsurf': require('./windsurf'),
 };
 
 /**

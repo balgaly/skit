@@ -1,8 +1,10 @@
 tests/
 docs/
 .claude/
+.github/
 .workspace/
 .a5c/
 .playwright-mcp/
 CLAUDE.md
 PROMPT.md
+CHANGELOG.md
