@@ -371,6 +371,10 @@ function allow(projectPath, name) {
     return { success: false, error: { code: 'INVALID_PATH', message: `Project path does not exist: ${projectPath}` } };
   }
 
+  if (!name || typeof name !== 'string' || name.length > 200 || !/^[a-zA-Z0-9_\-.@]+$/.test(name)) {
+    return { success: false, error: { code: 'INVALID_NAME', message: `Invalid skill/plugin name: "${name}". Use alphanumeric characters, hyphens, underscores, dots, or @ for plugins.` } };
+  }
+
   const localSettingsPath = projectFile(projectPath, LOCAL_SETTINGS);
   const localSettings = readJSON(localSettingsPath) || {};
   const isPlugin = name.includes('@');
