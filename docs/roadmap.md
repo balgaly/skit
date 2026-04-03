@@ -70,7 +70,7 @@ Extract to:
 
 Low risk, improves consistency. Good first-contributor task.
 
-### 6. Interactive TUI (`npx skit` with no args)
+### 6. Interactive TUI (`skit` with no args)
 Launch a menu when run without a subcommand. Browse installed skills,
 quick-install from popular sources, open profile diff. Needs `src/ui/` extracted first.
 

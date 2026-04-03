@@ -29,14 +29,14 @@
 ## Quick Start
 
 ```bash
-# Install globally
-npm install -g skit
+# Install globally (CLI command stays `skit`)
+npm install -g skit-cli
 
 # Install skills from a GitHub repo
 skit install https://github.com/someone/their-skills
 
 # Clone someone's entire skill setup
-npx skit clone snir
+skit clone snir
 
 # List what you have
 skit list
@@ -147,7 +147,7 @@ Skills are grouped by source with their descriptions. Own sources are highlighte
 The viral feature. One command to replicate anyone's skill setup:
 
 ```bash
-$ npx skit clone snir
+$ skit clone snir
 ```
 
 <img src="docs/assets/clone-demo.gif" alt="skit clone" width="680">

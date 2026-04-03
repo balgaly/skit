@@ -42,7 +42,7 @@ AI coding agents (Claude Code, Cursor, Windsurf) support user-authored skills/ru
 | `skit profile export/import/diff/push` | v1.0 | Powers clone |
 | `skit doctor` | v1.0 | Health checks |
 | [`skit incognito`](INCOGNITO-MODE.md) — per-project plugin quarantine | v1.x | In progress |
-| Interactive TUI browser (`npx skit`) | v1.1 | Community registry (JSON on GitHub) |
+| Interactive TUI browser (`skit`) | v1.1 | Community registry (JSON on GitHub) |
 | Trending/popular skills | v2.0 | Needs adoption data |
 | Cursor agent adapter | v1.x | Implemented |
 | Windsurf agent adapter | v1.x | As demand emerges |
@@ -249,7 +249,7 @@ $ skit install https://github.com/someone/their-skills
 #### `skit clone` (viral flow)
 
 ```
-$ npx skit clone snir
+$ skit clone snir
 
   Fetching snir's profile...
   Found 8 skills from 3 sources:
@@ -490,7 +490,7 @@ URL detection via pattern matching:
 2. Use `gh` CLI (GitHub CLI) to create or update a gist
 3. Gist filename: `skit-profile.json`
 4. Gist description: `skit profile for <user> - <N> skills from <M> sources`
-5. Print shareable: `npx skit clone <user>`
+5. Print shareable: `skit clone <user>`
 
 Requires `gh` CLI installed and authenticated. If not available, export the JSON and tell the user to manually create a gist.
 
@@ -589,7 +589,7 @@ skit/
 | `chalk` | Terminal colors | Universal, lightweight |
 | `ora` | Spinners for async operations | Clean, simple API |
 
-No heavy frameworks. Target: fast startup, `npx skit` should feel instant.
+No heavy frameworks. Target: fast startup, `skit` should feel instant.
 
 ---
 
