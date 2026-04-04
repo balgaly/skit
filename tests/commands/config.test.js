@@ -75,14 +75,14 @@ describe('skit config set', () => {
   });
 
   it('shows error for unknown agent value', async () => {
-    const output = await captureStdout(() => configSet('agent', 'windsurf', {}));
+    const output = await captureStdout(() => configSet('agent', 'vscode', {}));
     assert.ok(output.includes('Unknown agent'), `Expected error about unknown agent, got: ${output}`);
   });
 
   it('does not persist an unknown agent value', async () => {
-    await configSet('agent', 'windsurf', {});
+    await configSet('agent', 'vscode', {});
     const output = await captureStdout(() => configGet('agent', {}));
-    assert.ok(!output.includes('windsurf'), `Expected windsurf not to be stored, got: ${output}`);
+    assert.ok(!output.includes('vscode'), `Expected vscode not to be stored, got: ${output}`);
   });
 });
 
