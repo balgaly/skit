@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/skit"><img src="https://img.shields.io/npm/v/skit.svg?style=flat-square&color=6C63FF" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/skit-cli"><img src="https://img.shields.io/npm/v/skit-cli.svg?style=flat-square&color=6C63FF" alt="npm version"></a>
   <a href="https://opensource.org/licenses/ISC"><img src="https://img.shields.io/badge/license-ISC-blue.svg?style=flat-square" alt="License: ISC"></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/node/v/skit?style=flat-square&color=3B82F6" alt="Node.js"></a>
   <a href="#supported-agents"><img src="https://img.shields.io/badge/agents-Claude_Code_%7C_Cursor_%7C_Windsurf-22D3EE?style=flat-square" alt="Agents"></a>
