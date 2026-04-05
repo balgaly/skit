@@ -3,5 +3,7 @@ node_modules/
 .a5c/
 .playwright-mcp/
 .claude/
+.superpowers/
 PROMPT.md
 docs/superpowers/
+docs/changes-review.html
