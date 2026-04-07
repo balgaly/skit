@@ -1,6 +1,6 @@
 'use strict';
 
-const chalk = require('chalk');
+const format = require('./format');
 
 /**
  * Multi-select checkbox for picking skills to install.
@@ -13,7 +13,7 @@ const chalk = require('chalk');
 async function pickSkills(skills, options = {}) {
   const inquirer = options._inquirer || require('inquirer');
   const choices = skills.map((s) => ({
-    name: `${s.name}  ${chalk.dim('- ' + (s.description || 'No description'))}`,
+    name: `${s.name}  ${format.dim('- ' + (s.description || 'No description'))}`,
     value: s,
     checked: false,
   }));
