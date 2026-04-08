@@ -36,46 +36,48 @@ async function browseRegistry(options = {}) {
     return;
   }
 
-  // Build search choices
+  // Build search choices once (registry doesn't change within a browse session)
   const searchChoices = registry.entries.map((entry) => ({
     name: `${entry.name}  ${format.dim('— ' + entry.description)}`,
     value: entry,
     description: entry.tags.join(', '),
   }));
 
-  // Add submit option as a separator-style entry
   const SUBMIT = '__submit__';
   searchChoices.push({
     name: format.dim('Submit a repo...'),
     value: SUBMIT,
   });
 
-  let selected;
-  try {
-    selected = await search({
-      message: 'Search skills:',
-      source: (input) => {
-        if (!input) return searchChoices;
-        const q = input.toLowerCase();
-        return searchChoices.filter((c) =>
-          c.value === SUBMIT ||
-          c.value.name.toLowerCase().includes(q) ||
-          c.value.description.toLowerCase().includes(q) ||
-          (Array.isArray(c.value.tags) && c.value.tags.some((t) => t.toLowerCase().includes(q)))
-        );
-      },
-    });
-  } catch {
-    // User pressed Ctrl+C
-    return;
-  }
+  while (true) {
+    let selected;
+    try {
+      selected = await search({
+        message: 'Search skills:',
+        source: (input) => {
+          if (!input) return searchChoices;
+          const q = input.toLowerCase();
+          return searchChoices.filter((c) =>
+            c.value === SUBMIT ||
+            c.value.name.toLowerCase().includes(q) ||
+            c.value.description.toLowerCase().includes(q) ||
+            (Array.isArray(c.value.tags) && c.value.tags.some((t) => t.toLowerCase().includes(q)))
+          );
+        },
+      });
+    } catch {
+      // User pressed Ctrl+C — exit browse
+      return;
+    }
 
-  if (selected === SUBMIT) {
-    await submitRepo({ skitHome: options.skitHome, _open: openFn });
-    return;
-  }
+    if (selected === SUBMIT) {
+      await submitRepo({ skitHome: options.skitHome, _open: openFn });
+      continue; // back to search after submit
+    }
 
-  await showSkillDetail(selected, { skitHome: options.skitHome, _open: openFn, _install: options._install });
+    await showSkillDetail(selected, { skitHome: options.skitHome, _open: openFn, _install: options._install });
+    // After showSkillDetail returns for any reason (back, open, install), loop back to search
+  }
 }
 
 /**
@@ -92,7 +94,7 @@ async function showSkillDetail(entry, options = {}) {
   console.log(format.dim(`by ${entry.author} · ${(entry.agents || []).join(', ')}`));
   console.log('');
   console.log(entry.description);
-  if (entry.tags.length > 0) {
+  if ((entry.tags || []).length > 0) {
     console.log('');
     console.log(format.dim(`tags: ${entry.tags.join(' · ')}`));
   }
@@ -111,12 +113,11 @@ async function showSkillDetail(entry, options = {}) {
 
   if (action === 'install') {
     await installFn(entry.url, { skitHome: options.skitHome });
-    // Return to browse after install
-    await browseRegistry(options);
+    // Return normally — browseRegistry loop will re-show search
   } else if (action === 'open') {
     await openFn(entry.url);
   }
-  // 'back' falls through — returns to caller (browseRegistry)
+  // 'back' falls through — returns to browseRegistry loop
 }
 
 /**
@@ -129,12 +130,17 @@ async function submitRepo(options = {}) {
 
   let url = '';
   while (true) {
-    const answers = await inquirer.prompt([{
-      type: 'input',
-      name: 'url',
-      message: 'Paste a GitHub URL:',
-      default: url || 'https://github.com/',
-    }]);
+    let answers;
+    try {
+      answers = await inquirer.prompt([{
+        type: 'input',
+        name: 'url',
+        message: 'Paste a GitHub URL:',
+        default: url || 'https://github.com/',
+      }]);
+    } catch {
+      return; // user pressed Ctrl+C
+    }
     url = answers.url.trim();
 
     if (!validateRegistryUrl(url)) {
