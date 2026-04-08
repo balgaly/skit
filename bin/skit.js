@@ -17,6 +17,7 @@ const { profileExport, profileImport, profileDiff, profilePush } = require('../s
 const { clone } = require('../src/commands/clone');
 const { incognitoOn, incognitoOff, incognitoStatus, incognitoAllow } = require('../src/commands/incognito');
 const { version } = require('../package.json');
+const { tui } = require('../src/commands/tui');
 
 const program = new Command();
 
@@ -174,4 +175,12 @@ incognitoCmd
   .description('Allow a skill (e.g. ship) or plugin (e.g. superpowers@claude-plugins-official) in this project')
   .action((name) => { incognitoAllow(name); });
 
-program.parse(process.argv);
+// If no subcommand is given, launch the interactive TUI
+if (process.argv.length <= 2) {
+  tui().catch((err) => {
+    console.error(err.message);
+    process.exit(1);
+  });
+} else {
+  program.parse(process.argv);
+}
