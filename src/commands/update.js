@@ -1,6 +1,7 @@
 'use strict';
 
-const chalk = require('chalk');
+const format = require('../ui/format');
+const { spinner } = require('../ui/spinner');
 
 const { pullRepo, getCurrentSha, isGitRepo } = require('../core/git');
 const { readManifest, writeManifest, listSources, getSource } = require('../core/manifest');
@@ -15,13 +16,21 @@ const { resolveSkitHome } = require('../index');
  */
 async function update(sourceName, options = {}) {
   const skitHome = options.skitHome || resolveSkitHome();
+
+  try {
+    const { invalidateCache } = require('../core/registry');
+    invalidateCache(skitHome);
+  } catch {
+    // registry module not yet available — skip cache invalidation
+  }
+
   const manifest = readManifest(skitHome);
   const sources = manifest.sources || {};
 
   // If a specific source is requested, validate it exists
   if (sourceName) {
     if (!sources[sourceName]) {
-      console.log(chalk.red(`Error: source "${sourceName}" not found.`));
+      console.log(format.error(`Error: source "${sourceName}" not found.`));
       return;
     }
   }
@@ -30,7 +39,7 @@ async function update(sourceName, options = {}) {
   const sourceNames = sourceName ? [sourceName] : Object.keys(sources);
 
   if (sourceNames.length === 0) {
-    console.log(chalk.yellow('No sources to update.'));
+    console.log(format.warn('No sources to update.'));
     return;
   }
 
@@ -45,14 +54,14 @@ async function update(sourceName, options = {}) {
 
     // Skip _standalone (no git remote)
     if (name === '_standalone') {
-      console.log(chalk.dim(`  Skipping _standalone (no git remote)`));
+      console.log(format.dim(`  Skipping _standalone (no git remote)`));
       skippedCount++;
       continue;
     }
 
     // Skip if not a git repo
     if (!isGitRepo(sourceDir)) {
-      console.log(chalk.dim(`  Skipping "${name}" (not a git repo)`));
+      console.log(format.dim(`  Skipping "${name}" (not a git repo)`));
       skippedCount++;
       continue;
     }
@@ -62,34 +71,23 @@ async function update(sourceName, options = {}) {
     try {
       shaBefore = getCurrentSha(sourceDir);
     } catch (err) {
-      console.log(chalk.red(`  Error reading "${name}": ${err.message}`));
+      console.log(format.error(`  Error reading "${name}": ${err.message}`));
       errorCount++;
       continue;
     }
 
     // Pull
-    let spinner;
-    let spinnerAvailable = false;
-    try {
-      const ora = require('ora');
-      spinner = ora(`Updating "${name}"...`).start();
-      spinnerAvailable = true;
-    } catch {
-      // ora not available (testing environment), use plain output
-      console.log(chalk.cyan(`  Updating "${name}"...`));
-    }
+    const s = spinner(`Updating "${name}"...`).start();
 
     try {
       const result = pullRepo(sourceDir);
 
       if (result.updated) {
-        if (spinnerAvailable && spinner) {
-          spinner.succeed(`Updated "${name}" ${chalk.dim(`${shaBefore.slice(0, 7)} -> ${result.sha.slice(0, 7)}`)}`);
-        }
+        s.succeed(`Updated "${name}" ${shaBefore.slice(0, 7)} -> ${result.sha.slice(0, 7)}`);
         // Always log to stdout for test capture
         console.log(
-          chalk.green(`  Updated "${name}"`) +
-          chalk.dim(` ${shaBefore.slice(0, 7)} -> ${result.sha.slice(0, 7)}`)
+          format.success(`  Updated "${name}"`) +
+          format.dim(` ${shaBefore.slice(0, 7)} -> ${result.sha.slice(0, 7)}`)
         );
         updatedCount++;
 
@@ -97,17 +95,13 @@ async function update(sourceName, options = {}) {
         manifest.sources[name].sha = result.sha;
         manifest.sources[name].updatedAt = new Date().toISOString();
       } else {
-        if (spinnerAvailable && spinner) {
-          spinner.info(`"${name}" already up to date`);
-        }
-        console.log(chalk.dim(`  "${name}" already up to date`));
+        s.stop();
+        console.log(format.dim(`  "${name}" already up to date`));
         upToDateCount++;
       }
     } catch (err) {
-      if (spinnerAvailable && spinner) {
-        spinner.fail(`Error updating "${name}": ${err.message}`);
-      }
-      console.log(chalk.red(`  Error updating "${name}": ${err.message}`));
+      s.fail(`Error updating "${name}": ${err.message}`);
+      console.log(format.error(`  Error updating "${name}": ${err.message}`));
       errorCount++;
     }
   }
@@ -120,16 +114,16 @@ async function update(sourceName, options = {}) {
   // Summary
   console.log('');
   if (updatedCount > 0) {
-    console.log(chalk.green(`${updatedCount} source${updatedCount === 1 ? '' : 's'} updated.`));
+    console.log(format.success(`${updatedCount} source${updatedCount === 1 ? '' : 's'} updated.`));
   }
   if (upToDateCount > 0) {
-    console.log(chalk.dim(`${upToDateCount} source${upToDateCount === 1 ? '' : 's'} already up to date.`));
+    console.log(format.dim(`${upToDateCount} source${upToDateCount === 1 ? '' : 's'} already up to date.`));
   }
   if (skippedCount > 0) {
-    console.log(chalk.dim(`${skippedCount} source${skippedCount === 1 ? '' : 's'} skipped.`));
+    console.log(format.dim(`${skippedCount} source${skippedCount === 1 ? '' : 's'} skipped.`));
   }
   if (errorCount > 0) {
-    console.log(chalk.red(`${errorCount} source${errorCount === 1 ? '' : 's'} had errors.`));
+    console.log(format.error(`${errorCount} source${errorCount === 1 ? '' : 's'} had errors.`));
   }
 }
 
