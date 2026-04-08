@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 
-const { fetchRegistry, validateRegistryUrl, stripAnsi } = require('../../src/core/registry');
+const { fetchRegistry, validateRegistryUrl, stripAnsi, invalidateCache } = require('../../src/core/registry');
 
 function makeTmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'skit-registry-test-'));
@@ -62,6 +62,10 @@ describe('validateRegistryUrl', () => {
   it('rejects null/undefined', () => {
     assert.strictEqual(validateRegistryUrl(null), false);
     assert.strictEqual(validateRegistryUrl(undefined), false);
+  });
+
+  it('rejects subdomain-spoofed github URLs', () => {
+    assert.strictEqual(validateRegistryUrl('https://github.com.evil.com/foo'), false);
   });
 });
 
@@ -174,5 +178,24 @@ describe('fetchRegistry - fetch failure', () => {
     });
     const result = await fetchRegistry({ skitHome: tmpDir, _fetch: mockFetch });
     assert.strictEqual(result.entries[0].name, 'superpowers');
+  });
+});
+
+describe('invalidateCache', () => {
+  it('removes the cache file if it exists', () => {
+    const tmpDir = makeTmpDir();
+    const cacheFile = path.join(tmpDir, 'registry-cache.json');
+    fs.writeFileSync(cacheFile, '{}', 'utf-8');
+
+    invalidateCache(tmpDir);
+
+    assert.strictEqual(fs.existsSync(cacheFile), false);
+    cleanTmpDir(tmpDir);
+  });
+
+  it('does not throw if cache file does not exist', () => {
+    const tmpDir = makeTmpDir();
+    assert.doesNotThrow(() => invalidateCache(tmpDir));
+    cleanTmpDir(tmpDir);
   });
 });

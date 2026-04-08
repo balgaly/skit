@@ -2,6 +2,9 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
+
+const { resolveSkitHome } = require('../index');
 
 const REGISTRY_URL = 'https://raw.githubusercontent.com/balgaly/skit-registry/main/index.json';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -15,7 +18,12 @@ function stripAnsi(str) {
 
 function validateRegistryUrl(url) {
   if (!url || typeof url !== 'string') return false;
-  return url.startsWith('https://github.com/');
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && parsed.hostname === 'github.com';
+  } catch {
+    return false;
+  }
 }
 
 function readCache(skitHome) {
@@ -47,7 +55,7 @@ function sanitizeEntries(entries) {
 }
 
 async function fetchRegistry(options = {}) {
-  const skitHome = options.skitHome || path.join(require('node:os').homedir(), '.skit');
+  const skitHome = options.skitHome || resolveSkitHome();
   const fetchFn = options._fetch || globalThis.fetch;
 
   const cache = readCache(skitHome);
@@ -61,9 +69,13 @@ async function fetchRegistry(options = {}) {
     const res = await fetchFn(REGISTRY_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    writeCache(skitHome, data);
+    try {
+      writeCache(skitHome, data);
+    } catch {
+      console.warn('skit: failed to write registry cache');
+    }
     return { ...data, entries: sanitizeEntries(data.entries) };
-  } catch {
+  } catch (err) {
     if (cache && cache.data) {
       const data = cache.data;
       return { ...data, entries: sanitizeEntries(data.entries) };
