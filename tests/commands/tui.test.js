@@ -59,4 +59,38 @@ describe('tui routing', () => {
       skitHome: require('node:os').tmpdir(),
     });
   });
+
+  it('calls browse screen when browse action is chosen', async () => {
+    let browseCalled = false;
+    const { tui } = require('../../src/commands/tui');
+
+    await tui({
+      _pickAction: async () => 'browse',
+      _doctor: async () => {},
+      _update: async () => {},
+      _sync: async () => {},
+      _browse: async () => { browseCalled = true; },
+      _mySkills: async () => {},
+      skitHome: require('node:os').tmpdir(),
+    });
+
+    assert.strictEqual(browseCalled, true);
+  });
+
+  it('calls my-skills screen when my-skills action is chosen', async () => {
+    let mySkillsCalled = false;
+    const { tui } = require('../../src/commands/tui');
+
+    await tui({
+      _pickAction: async () => 'my-skills',
+      _doctor: async () => {},
+      _update: async () => {},
+      _sync: async () => {},
+      _browse: async () => {},
+      _mySkills: async () => { mySkillsCalled = true; },
+      skitHome: require('node:os').tmpdir(),
+    });
+
+    assert.strictEqual(mySkillsCalled, true);
+  });
 });
