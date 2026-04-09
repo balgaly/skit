@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 
-const DEFAULT_CONFIG = { agent: 'claude-code', user: null, skitHome: null };
+const DEFAULT_CONFIG = { agent: 'claude-code', user: null, skitHome: null, discovered: false };
 
 function readConfig(skitHome) {
   const configPath = path.join(skitHome, 'config.json');

@@ -1,6 +1,6 @@
 'use strict';
 
-const { resolveSkitHome, ensureDirs, loadConfig } = require('../index');
+const { resolveSkitHome, ensureDirs, loadConfig, saveConfig } = require('../index');
 const { listSkills } = require('../core/manifest');
 const format = require('../ui/format');
 
@@ -91,7 +91,7 @@ async function tui(options = {}) {
 
   const config = loadConfig(skitHome);
   const skills = listSkills(skitHome);
-  const skillCount = Object.keys(skills).length;
+  let skillCount = Object.keys(skills).length;
   const agentName = config.agent || 'claude-code';
 
   const pickAction = options._pickAction || _defaultPickAction;
@@ -100,13 +100,24 @@ async function tui(options = {}) {
   const doctor = options._doctor || require('./doctor').doctor;
   const update = options._update || require('./update').update;
   const sync = options._sync || require('./sync').sync;
+  const inquirer = options._inquirer || require('inquirer');
 
   const tip = TIPS[Math.floor(Math.random() * TIPS.length)];
   printHeader(skillCount, tip);
 
+  // First-run onboarding
+  if (!config.discovered) {
+    const discoverFn = options._discover || require('./discover').discover;
+    await runFirstTimeOnboard({ skitHome, config, discoverFn, options });
+    // Reload skill count after potential discovery
+    const updatedSkills = listSkills(skitHome);
+    skillCount = Object.keys(updatedSkills).length;
+  }
+
   const choice = await pickAction('What would you like to do?', [
     { name: 'Browse registry', value: 'browse' },
     { name: 'My skills',       value: 'my-skills' },
+    { name: 'Discover skills', value: 'discover' },
     { name: 'Update / sync',   value: 'update-sync' },
     { name: 'Health check',    value: 'health-check' },
     { name: 'Exit',            value: 'exit' },
@@ -119,6 +130,9 @@ async function tui(options = {}) {
     case 'my-skills':
       await mySkillsScreen({ skitHome });
       break;
+    case 'discover':
+      await (options._discover || require('./discover').discover)({ skitHome });
+      break;
     case 'update-sync':
       await update(undefined, { skitHome });
       await sync({ skitHome });
@@ -130,6 +144,37 @@ async function tui(options = {}) {
     default:
       break;
   }
+}
+
+async function runFirstTimeOnboard({ skitHome, config, discoverFn, options }) {
+  const inq = options._inquirer || require('inquirer');
+
+  console.log(format.info('  ✦ Welcome! Looks like this is your first run.'));
+  console.log(format.dim('    skit can scan your agent\'s skills folder and take over managing it.'));
+  console.log(format.dim('    Nothing will be moved, deleted, or changed — just catalogued.'));
+  console.log('');
+
+  let doScan;
+  try {
+    const answer = await inq.prompt([{
+      type: 'confirm',
+      name: 'scan',
+      message: 'Scan for existing skills now?',
+      default: true,
+    }]);
+    doScan = answer.scan;
+  } catch {
+    doScan = false;
+  }
+
+  if (doScan) {
+    await discoverFn({ skitHome, agentSkillDir: options.agentSkillDir, _inquirer: options._inquirer });
+  }
+
+  // Mark as onboarded regardless of choice — never ask again
+  config.discovered = true;
+  saveConfig(skitHome, config);
+  console.log('');
 }
 
 async function _defaultPickAction(message, choices) {

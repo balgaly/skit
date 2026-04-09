@@ -6,7 +6,7 @@ const os = require('node:os');
 
 const { readConfig, writeConfig, getConfigValue, setConfigValue, resolveSkitHome } = require('../../src/core/config');
 
-const DEFAULT_CONFIG = { agent: 'claude-code', user: null, skitHome: null };
+const DEFAULT_CONFIG = { agent: 'claude-code', user: null, skitHome: null, discovered: false };
 
 function makeTmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'skit-config-test-'));

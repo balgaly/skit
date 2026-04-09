@@ -22,6 +22,8 @@ describe('tui routing', () => {
       _sync: async () => {},
       _browse: async () => {},
       _mySkills: async () => {},
+      _discover: async () => {},
+      _inquirer: { prompt: async () => ({ scan: false }) },
       skitHome: require('node:os').tmpdir(),
     });
 
@@ -40,6 +42,8 @@ describe('tui routing', () => {
       _sync: async () => { syncCalled = true; },
       _browse: async () => {},
       _mySkills: async () => {},
+      _discover: async () => {},
+      _inquirer: { prompt: async () => ({ scan: false }) },
       skitHome: require('node:os').tmpdir(),
     });
 
@@ -56,6 +60,8 @@ describe('tui routing', () => {
       _sync: async () => {},
       _browse: async () => {},
       _mySkills: async () => {},
+      _discover: async () => {},
+      _inquirer: { prompt: async () => ({ scan: false }) },
       skitHome: require('node:os').tmpdir(),
     });
   });
@@ -71,6 +77,8 @@ describe('tui routing', () => {
       _sync: async () => {},
       _browse: async () => { browseCalled = true; },
       _mySkills: async () => {},
+      _discover: async () => {},
+      _inquirer: { prompt: async () => ({ scan: false }) },
       skitHome: require('node:os').tmpdir(),
     });
 
@@ -88,9 +96,30 @@ describe('tui routing', () => {
       _sync: async () => {},
       _browse: async () => {},
       _mySkills: async () => { mySkillsCalled = true; },
+      _discover: async () => {},
+      _inquirer: { prompt: async () => ({ scan: false }) },
       skitHome: require('node:os').tmpdir(),
     });
 
     assert.strictEqual(mySkillsCalled, true);
+  });
+
+  it('calls discover when discover action is chosen', async () => {
+    let discoverCalled = false;
+    const { tui } = require('../../src/commands/tui');
+
+    await tui({
+      _pickAction: async () => 'discover',
+      _doctor: async () => {},
+      _update: async () => {},
+      _sync: async () => {},
+      _browse: async () => {},
+      _mySkills: async () => {},
+      _discover: async () => { discoverCalled = true; },
+      _inquirer: { prompt: async () => ({ scan: false }) },
+      skitHome: require('node:os').tmpdir(),
+    });
+
+    assert.strictEqual(discoverCalled, true);
   });
 });
