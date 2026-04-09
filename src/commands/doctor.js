@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const chalk = require('chalk');
+const format = require('../ui/format');
 const { listSkills, listSources, getSkillsBySource } = require('../core/manifest');
 const { isLinked } = require('../core/linker');
 const { resolveSkitHome } = require('../index');
@@ -25,6 +25,8 @@ async function doctor(options = {}) {
   const skitHome = options.skitHome || resolveSkitHome();
   const agentSkillDir = options.agentSkillDir;
 
+  const { scanSkillDir } = require('./discover');
+
   const skills = listSkills(skitHome);
   const sources = listSources(skitHome);
   const skillEntries = Object.entries(skills);
@@ -35,7 +37,7 @@ async function doctor(options = {}) {
 
   const skillCount = skillEntries.length;
   if (skillCount > 0) {
-    console.log(chalk.dim(`  Checking ${skillCount} skill${skillCount === 1 ? '' : 's'}...\n`));
+    console.log(format.dim(`  Checking ${skillCount} skill${skillCount === 1 ? '' : 's'}...\n`));
   }
 
   // 1. Check broken links
@@ -73,37 +75,73 @@ async function doctor(options = {}) {
     }
   }
 
+  // 3. Discovery scan — untracked or mislocated skills
+  const untrackedSkills = [];
+  const mislocatedSkills = [];
+  try {
+    const scan = await scanSkillDir({ skitHome, agentSkillDir: options.agentSkillDir });
+    for (const item of scan.untracked_clean) {
+      untrackedSkills.push(item.name);
+    }
+    for (const item of scan.untracked_no_skillmd) {
+      untrackedSkills.push(item.name);
+    }
+    for (const item of scan.mislocated) {
+      mislocatedSkills.push({ name: item.name, realPath: item.realPath });
+    }
+  } catch {
+    // scan failure is non-fatal — doctor continues
+  }
+
   // Report
-  const totalIssues = brokenLinks.length + unusedSources.length;
+  const totalIssues = brokenLinks.length + unusedSources.length + untrackedSkills.length + mislocatedSkills.length;
 
   if (brokenLinks.length > 0) {
-    console.log(chalk.red.bold('  Broken links:'));
+    console.log(format.error('  Broken links:'));
     for (const link of brokenLinks) {
-      console.log(chalk.red(`    ${link.skill} -> ${link.reason} (${link.detail})`));
+      console.log(format.error(`    ${link.skill} -> ${link.reason} (${link.detail})`));
     }
     console.log('');
   }
 
   if (unusedSources.length > 0) {
-    console.log(chalk.yellow.bold('  Unused sources:'));
+    console.log(format.warn('  Unused sources:'));
     for (const source of unusedSources) {
-      console.log(chalk.yellow(`    ${source}: cloned but no skills installed`));
+      console.log(format.warn(`    ${source}: cloned but no skills installed`));
     }
+    console.log('');
+  }
+
+  if (untrackedSkills.length > 0) {
+    console.log(format.warn('  Untracked skills (not managed by skit):'));
+    for (const name of untrackedSkills) {
+      console.log(format.warn(`    ${name}: exists in agent folder but not in manifest`));
+    }
+    console.log(format.dim('  → Run `skit discover` to register them.'));
+    console.log('');
+  }
+
+  if (mislocatedSkills.length > 0) {
+    console.log(format.warn('  Mislocated skills (pointing to unexpected paths):'));
+    for (const item of mislocatedSkills) {
+      console.log(format.warn(`    ${item.name} → ${item.realPath}`));
+    }
+    console.log(format.dim('  → Run `skit discover` to review them.'));
     console.log('');
   }
 
   // Summary
   if (totalIssues === 0) {
-    console.log(chalk.green(`  0 issues found. Everything looks healthy!`));
+    console.log(format.success(`  0 issues found. Everything looks healthy!`));
   } else {
     console.log(
-      chalk.red(`  ${totalIssues} issue${totalIssues === 1 ? '' : 's'} found.`) +
+      format.error(`  ${totalIssues} issue${totalIssues === 1 ? '' : 's'} found.`) +
         ' ' +
-        chalk.dim("Run 'skit sync' to fix broken links.")
+        format.dim("Run 'skit sync' to fix broken links.")
     );
   }
 
-  return { issues: totalIssues, brokenLinks, unusedSources };
+  return { issues: totalIssues, brokenLinks, unusedSources, untrackedSkills, mislocatedSkills };
 }
 
 module.exports = { doctor };
