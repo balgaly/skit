@@ -6,6 +6,7 @@ const format = require('../ui/format');
 const { listSkills, listSources, getSkillsBySource } = require('../core/manifest');
 const { isLinked } = require('../core/linker');
 const { resolveSkitHome } = require('../index');
+const { scanSkillDir } = require('./discover');
 
 /**
  * Run diagnostics on the skit installation.
@@ -24,8 +25,6 @@ const { resolveSkitHome } = require('../index');
 async function doctor(options = {}) {
   const skitHome = options.skitHome || resolveSkitHome();
   const agentSkillDir = options.agentSkillDir;
-
-  const { scanSkillDir } = require('./discover');
 
   const skills = listSkills(skitHome);
   const sources = listSources(skitHome);

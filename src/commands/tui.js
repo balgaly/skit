@@ -2,6 +2,7 @@
 
 const { resolveSkitHome, ensureDirs, loadConfig, saveConfig } = require('../index');
 const { listSkills } = require('../core/manifest');
+const { version } = require('../../package.json');
 const format = require('../ui/format');
 
 const TIPS = [
@@ -61,7 +62,6 @@ const TIPS = [
 ];
 
 function printHeader(skillCount, tip) {
-  const { version } = require('../../package.json');
   const art = [
     ' ___  _    _ _   ',
     '/ __|| |  (_) |_ ',
@@ -92,7 +92,6 @@ async function tui(options = {}) {
   const config = loadConfig(skitHome);
   const skills = listSkills(skitHome);
   let skillCount = Object.keys(skills).length;
-  const agentName = config.agent || 'claude-code';
 
   const pickAction = options._pickAction || _defaultPickAction;
   const browseScreen = options._browse || require('./tui/browse').browseRegistry;
