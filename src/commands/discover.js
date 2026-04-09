@@ -58,7 +58,8 @@ async function scanSkillDir(options = {}) {
       // can't resolve — treat as untracked
     }
     const sourcesDir = path.join(skitHome, 'sources');
-    const isInsideSkit = realPath.startsWith(sourcesDir);
+    const normalizedSourcesDir = (sourcesDir.endsWith(path.sep) ? sourcesDir : sourcesDir + path.sep).toLowerCase();
+    const isInsideSkit = realPath.toLowerCase().startsWith(normalizedSourcesDir);
 
     if (!isInsideSkit && realPath !== dir) {
       result.mislocated.push({ name, dir, realPath });

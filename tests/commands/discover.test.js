@@ -68,6 +68,19 @@ describe('scanSkillDir', () => {
     assert.strictEqual(result.tracked.length, 1);
     assert.strictEqual(result.untracked_clean.length, 0);
   });
+
+  it('does not classify skill as mislocated when path contains sources/ as prefix of longer dirname', async () => {
+    // This test verifies the path.sep fix: a skill in agentDir (outside sources/)
+    // should not be confused with one inside sources-evil/
+    // Real dirs have realPath === dir so they go to untracked_clean, not mislocated
+    const skillDir = path.join(agentDir, 'legit-skill');
+    fs.mkdirSync(skillDir);
+    fs.writeFileSync(path.join(skillDir, 'SKILL.md'), '---\nname: legit-skill\n---\n', 'utf-8');
+
+    const result = await scanSkillDir({ skitHome: tmpDir, agentSkillDir: agentDir });
+    assert.strictEqual(result.mislocated.length, 0);
+    assert.strictEqual(result.untracked_clean[0].name, 'legit-skill');
+  });
 });
 
 describe('discover', () => {
@@ -114,5 +127,35 @@ describe('discover', () => {
     const files = fs.readdirSync(tmpDir);
     const backupFile = files.find(f => f.startsWith('manifest.backup-'));
     assert.ok(backupFile, 'backup file should exist');
+  });
+
+  it('returns empty registered when user presses Ctrl-C during prompt', async () => {
+    const skillDir = path.join(agentDir, 'ctrl-c-skill');
+    fs.mkdirSync(skillDir);
+    fs.writeFileSync(path.join(skillDir, 'SKILL.md'), '---\nname: ctrl-c-skill\n---\n', 'utf-8');
+
+    const mockInquirer = {
+      prompt: async () => { throw new Error('User force closed the prompt'); }
+    };
+
+    const result = await discover({ skitHome: tmpDir, agentSkillDir: agentDir, _inquirer: mockInquirer });
+    assert.deepStrictEqual(result.registered, []);
+
+    // Manifest should be unchanged
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, 'manifest.json'), 'utf-8'));
+    assert.deepStrictEqual(manifest.skills, {});
+  });
+
+  it('returns empty registered when user selects nothing', async () => {
+    const skillDir = path.join(agentDir, 'skipped-skill');
+    fs.mkdirSync(skillDir);
+    fs.writeFileSync(path.join(skillDir, 'SKILL.md'), '---\nname: skipped-skill\n---\n', 'utf-8');
+
+    const mockInquirer = {
+      prompt: async () => ({ skills: [] })  // user deselected everything
+    };
+
+    const result = await discover({ skitHome: tmpDir, agentSkillDir: agentDir, _inquirer: mockInquirer });
+    assert.deepStrictEqual(result.registered, []);
   });
 });
