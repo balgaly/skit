@@ -18,6 +18,7 @@ const { clone } = require('../src/commands/clone');
 const { incognitoOn, incognitoOff, incognitoStatus, incognitoAllow } = require('../src/commands/incognito');
 const { version } = require('../package.json');
 const { tui } = require('../src/commands/tui');
+const { discover } = require('../src/commands/discover');
 
 const program = new Command();
 
@@ -174,6 +175,16 @@ incognitoCmd
   .command('allow <name>')
   .description('Allow a skill (e.g. ship) or plugin (e.g. superpowers@claude-plugins-official) in this project')
   .action((name) => { incognitoAllow(name); });
+
+program
+  .command('discover')
+  .description('Scan agent skill folder and register untracked skills')
+  .action(() => {
+    discover().catch((err) => {
+      console.error(err.message);
+      process.exit(1);
+    });
+  });
 
 // If no subcommand is given, launch the interactive TUI
 if (process.argv.length <= 2) {
