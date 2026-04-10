@@ -111,28 +111,38 @@ async function discover(options = {}) {
   }
 
   console.log('');
-  console.log(format.header(`  Scan results: ${scan.agentSkillDir}`));
+  console.log(format.header(`  Scan results — global (${scan.agentSkillDir})`));
   console.log('');
 
   if (scan.tracked.length > 0) {
-    console.log(format.dim(`  ${scan.tracked.length} already tracked`));
+    console.log(format.dim(`  Already tracked (${scan.tracked.length}):`));
+    for (const item of scan.tracked) {
+      console.log(format.dim(`    · ${item.name}`));
+    }
+    console.log('');
   }
   if (scan.untracked_clean.length > 0) {
-    console.log(format.info(`  ${scan.untracked_clean.length} untracked (ready to register)`));
+    console.log(format.info(`  Ready to register (${scan.untracked_clean.length}):`));
+    for (const item of scan.untracked_clean) {
+      const desc = item.meta && item.meta.description ? item.meta.description : 'no description';
+      console.log(format.info(`    · ${item.name}  ${format.dim('— ' + desc)}`));
+    }
+    console.log('');
   }
   if (scan.untracked_no_skillmd.length > 0) {
-    console.log(format.warn(`  ${scan.untracked_no_skillmd.length} missing SKILL.md`));
+    console.log(format.warn(`  Missing SKILL.md (${scan.untracked_no_skillmd.length}):`));
     for (const item of scan.untracked_no_skillmd) {
       console.log(format.warn(`    · ${item.name} — no SKILL.md found`));
     }
+    console.log('');
   }
   if (scan.mislocated.length > 0) {
-    console.log(format.warn(`  ${scan.mislocated.length} pointing to unexpected location`));
+    console.log(format.warn(`  Mislocated — unexpected path (${scan.mislocated.length}):`));
     for (const item of scan.mislocated) {
       console.log(format.warn(`    · ${item.name} → ${item.realPath}`));
     }
+    console.log('');
   }
-  console.log('');
 
   // Nothing actionable
   if (scan.untracked_clean.length === 0) {
