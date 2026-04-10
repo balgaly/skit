@@ -63,14 +63,14 @@ const TIPS = [
 
 function printHeader(skillCount, tip) {
   const art = [
-    ' ___  _    _ _   ',
-    '/ __|| |  (_) |_ ',
-    '\\__ \\| |/ /| || __|',
-    '|   /|  < | || |_ ',
-    ' \\_/ |_|\\_\\|_| \\__|',
+    ' ██████╗ ██╗  ██╗██╗████████╗',
+    '██╔════╝ ██║ ██╔╝██║╚══██╔══╝',
+    '╚█████╗  █████╔╝ ██║   ██║   ',
+    ' ╚═══██╗ ██╔═██╗ ██║   ██║   ',
+    '██████╔╝ ██║  ██╗██║   ██║   ',
+    '╚═════╝  ╚═╝  ╚═╝╚═╝   ╚═╝   ',
   ];
   console.log('');
-  // Print ASCII art with version on last line
   for (let i = 0; i < art.length; i++) {
     if (i === art.length - 1) {
       console.log(format.info(art[i]) + format.dim(`  v${version}`));
@@ -153,7 +153,8 @@ async function runFirstTimeOnboard({ skitHome, config, discoverFn, options }) {
   console.log(format.dim('    Nothing will be moved, deleted, or changed — just catalogued.'));
   console.log('');
 
-  let doScan;
+  let doScan = false;
+  let userChose = false;
   try {
     const answer = await inq.prompt([{
       type: 'confirm',
@@ -162,17 +163,20 @@ async function runFirstTimeOnboard({ skitHome, config, discoverFn, options }) {
       default: true,
     }]);
     doScan = answer.scan;
+    userChose = true;
   } catch {
-    doScan = false;
+    // Ctrl-C — show again next run
   }
 
   if (doScan) {
     await discoverFn({ skitHome, agentSkillDir: options.agentSkillDir, _inquirer: options._inquirer });
   }
 
-  // Mark as onboarded regardless of choice — never ask again
-  config.discovered = true;
-  saveConfig(skitHome, config);
+  if (userChose) {
+    // Only mark as onboarded when user explicitly responded (yes or no)
+    config.discovered = true;
+    saveConfig(skitHome, config);
+  }
   console.log('');
 }
 
