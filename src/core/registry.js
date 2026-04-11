@@ -68,7 +68,9 @@ async function fetchRegistry(options = {}) {
   try {
     const res = await fetchFn(REGISTRY_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const text = await res.text();
+    if (text.length > 5_000_000) throw new Error('Registry response too large');
+    const data = JSON.parse(text);
     try {
       writeCache(skitHome, data);
     } catch {

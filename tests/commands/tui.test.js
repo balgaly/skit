@@ -1,6 +1,9 @@
 'use strict';
 
-const { describe, it } = require('node:test');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 
 describe('tui module exports', () => {
@@ -11,6 +14,16 @@ describe('tui module exports', () => {
 });
 
 describe('tui routing', () => {
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skit-tui-test-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
   it('calls doctor when health-check action is chosen', async () => {
     let doctorCalled = false;
     const { tui } = require('../../src/commands/tui');
@@ -24,7 +37,7 @@ describe('tui routing', () => {
       _mySkills: async () => {},
       _discover: async () => {},
       _inquirer: { prompt: async () => ({ scan: false }) },
-      skitHome: require('node:os').tmpdir(),
+      skitHome: tmpDir,
     });
 
     assert.strictEqual(doctorCalled, true);
@@ -44,7 +57,7 @@ describe('tui routing', () => {
       _mySkills: async () => {},
       _discover: async () => {},
       _inquirer: { prompt: async () => ({ scan: false }) },
-      skitHome: require('node:os').tmpdir(),
+      skitHome: tmpDir,
     });
 
     assert.strictEqual(updateCalled, true);
@@ -62,7 +75,7 @@ describe('tui routing', () => {
       _mySkills: async () => {},
       _discover: async () => {},
       _inquirer: { prompt: async () => ({ scan: false }) },
-      skitHome: require('node:os').tmpdir(),
+      skitHome: tmpDir,
     });
   });
 
@@ -79,7 +92,7 @@ describe('tui routing', () => {
       _mySkills: async () => {},
       _discover: async () => {},
       _inquirer: { prompt: async () => ({ scan: false }) },
-      skitHome: require('node:os').tmpdir(),
+      skitHome: tmpDir,
     });
 
     assert.strictEqual(browseCalled, true);
@@ -98,7 +111,7 @@ describe('tui routing', () => {
       _mySkills: async () => { mySkillsCalled = true; },
       _discover: async () => {},
       _inquirer: { prompt: async () => ({ scan: false }) },
-      skitHome: require('node:os').tmpdir(),
+      skitHome: tmpDir,
     });
 
     assert.strictEqual(mySkillsCalled, true);
@@ -117,7 +130,7 @@ describe('tui routing', () => {
       _mySkills: async () => {},
       _discover: async () => { discoverCalled = true; },
       _inquirer: { prompt: async () => ({ scan: false }) },
-      skitHome: require('node:os').tmpdir(),
+      skitHome: tmpDir,
     });
 
     assert.strictEqual(discoverCalled, true);

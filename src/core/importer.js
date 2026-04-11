@@ -131,7 +131,7 @@ function extractGistId(url) {
  * @param {string} destPath - The local file path to write to
  * @returns {Promise<void>}
  */
-function downloadFile(url, destPath) {
+function downloadFile(url, destPath, _redirectCount = 0) {
   if (!url || typeof url !== 'string') {
     return Promise.reject(new Error('URL is required'));
   }
@@ -157,11 +157,15 @@ function downloadFile(url, destPath) {
     const file = fs.createWriteStream(destPath);
 
     const request = https.get(url, { headers: { 'User-Agent': 'skit-cli' } }, (response) => {
-      // Follow redirects (3xx)
+      // Follow redirects (3xx) with a limit to prevent infinite loops
       if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
         file.close();
         fs.unlinkSync(destPath);
-        downloadFile(response.headers.location, destPath).then(resolve, reject);
+        if (_redirectCount >= 5) {
+          reject(new Error('Too many redirects (max 5)'));
+          return;
+        }
+        downloadFile(response.headers.location, destPath, _redirectCount + 1).then(resolve, reject);
         return;
       }
 

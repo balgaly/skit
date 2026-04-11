@@ -6,6 +6,8 @@ const format = require('../ui/format');
 const { spinner } = require('../ui/spinner');
 const { resolveSkitHome, loadConfig, loadManifest, saveManifest, getAgentAdapter } = require('../index');
 
+const SAFE_NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
+
 /**
  * Scan the agent skill directory for tracked/untracked/mislocated skills.
  * READ-ONLY — never modifies manifest.
@@ -44,9 +46,15 @@ async function scanSkillDir(options = {}) {
     const name = entry.name;
     const dir = path.join(agentSkillDir, name);
 
+    // Skip unsafe directory names
+    if (!SAFE_NAME_RE.test(name)) {
+      result.untracked_no_skillmd.push({ name, dir });
+      continue;
+    }
+
     // Check if already tracked
     if (skills[name]) {
-      result.tracked.push({ name, sourcePath: skills[name].sourcePath });
+      result.tracked.push({ name, path: skills[name].path });
       continue;
     }
 
@@ -189,12 +197,13 @@ async function discover(options = {}) {
     console.log(format.warn('  Could not write backup — proceeding anyway.'));
   }
 
-  // Register selected skills
+  // Register selected skills (compatible with install schema)
   const skills = manifest.skills || {};
   for (const entry of selected) {
     skills[entry.name] = {
       source: 'discovered',
-      sourcePath: entry.dir,
+      path: entry.dir,
+      linkedTo: entry.dir,
       installedAt: new Date().toISOString(),
     };
   }

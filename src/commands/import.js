@@ -272,7 +272,7 @@ async function importGist(url, parsed, skitHome, agentSkillDir) {
   // Download each gist file
   for (const fileName of files) {
     const fileData = gistData.files[fileName];
-    const fileDest = path.join(standaloneDir, fileName);
+    const fileDest = path.join(standaloneDir, path.basename(fileName));
     if (fileData.content) {
       // Content is inline in API response
       fs.writeFileSync(fileDest, fileData.content, 'utf-8');

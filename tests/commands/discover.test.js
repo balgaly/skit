@@ -60,7 +60,7 @@ describe('scanSkillDir', () => {
     fs.writeFileSync(path.join(skillDir, 'SKILL.md'), '---\nname: tracked-skill\n---\n', 'utf-8');
     // Add to manifest
     fs.writeFileSync(path.join(tmpDir, 'manifest.json'), JSON.stringify({
-      skills: { 'tracked-skill': { source: 'own', sourcePath: skillDir } },
+      skills: { 'tracked-skill': { source: 'own', path: skillDir } },
       sources: {}
     }), 'utf-8');
 

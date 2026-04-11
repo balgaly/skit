@@ -77,7 +77,7 @@ describe('fetchRegistry - fetch success', () => {
   it('returns entries and writes cache on successful fetch', async () => {
     const mockFetch = async () => ({
       ok: true,
-      json: async () => SAMPLE_INDEX,
+      text: async () => JSON.stringify(SAMPLE_INDEX),
     });
 
     const result = await fetchRegistry({ skitHome: tmpDir, _fetch: mockFetch });
@@ -105,7 +105,7 @@ describe('fetchRegistry - cache hit', () => {
     }), 'utf-8');
 
     let fetchCalled = false;
-    const mockFetch = async () => { fetchCalled = true; return { ok: true, json: async () => ({}) }; };
+    const mockFetch = async () => { fetchCalled = true; return { ok: true, text: async () => '{}' }; };
 
     const result = await fetchRegistry({ skitHome: tmpDir, _fetch: mockFetch });
     assert.strictEqual(fetchCalled, false);
@@ -121,7 +121,7 @@ describe('fetchRegistry - cache hit', () => {
 
     let fetchCalled = false;
     const freshIndex = { ...SAMPLE_INDEX, entries: [] };
-    const mockFetch = async () => { fetchCalled = true; return { ok: true, json: async () => freshIndex }; };
+    const mockFetch = async () => { fetchCalled = true; return { ok: true, text: async () => JSON.stringify(freshIndex) }; };
 
     const result = await fetchRegistry({ skitHome: tmpDir, _fetch: mockFetch });
     assert.strictEqual(fetchCalled, true);
@@ -174,7 +174,7 @@ describe('fetchRegistry - fetch failure', () => {
 
     const mockFetch = async () => ({
       ok: true,
-      json: async () => { throw new SyntaxError('bad JSON'); },
+      text: async () => '{bad json',
     });
     const result = await fetchRegistry({ skitHome: tmpDir, _fetch: mockFetch });
     assert.strictEqual(result.entries[0].name, 'superpowers');

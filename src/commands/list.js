@@ -1,6 +1,6 @@
 'use strict';
 
-const chalk = require('chalk');
+const format = require('../ui/format');
 const { listSkills } = require('../core/manifest');
 const { resolveSkitHome, ensureDirs } = require('../index');
 
@@ -19,8 +19,8 @@ function list(options = {}) {
   const allEntries = Object.entries(skills);
 
   if (allEntries.length === 0) {
-    console.log(chalk.yellow('No skills installed.'));
-    console.log(chalk.dim('Run "skit install <source>" to install skills.'));
+    console.log(format.warn('No skills installed.'));
+    console.log(format.dim('Run "skit install <source>" to install skills.'));
     return;
   }
 
@@ -41,16 +41,16 @@ function list(options = {}) {
     : Object.keys(grouped);
 
   if (sourcesToShow.length === 0) {
-    console.log(chalk.yellow(`No skills found from source "${sourceFilter}".`));
+    console.log(format.warn(`No skills found from source "${sourceFilter}".`));
     return;
   }
 
   for (const source of sourcesToShow) {
     const sourceSkills = grouped[source];
-    console.log(chalk.cyan.bold(source));
+    console.log(format.header(source));
     for (const skill of sourceSkills) {
       const desc = skill.description || 'No description';
-      console.log(`  ${chalk.white(skill.name)}  ${chalk.dim(desc)}`);
+      console.log(`  ${skill.name}  ${format.dim(desc)}`);
     }
     console.log('');
   }

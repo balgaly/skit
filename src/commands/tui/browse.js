@@ -1,6 +1,6 @@
 'use strict';
 
-const { search } = require('@inquirer/search');
+const search = require('@inquirer/search').default;
 const format = require('../../ui/format');
 const { pickAction } = require('../../ui/picker');
 const { fetchRegistry, validateRegistryUrl } = require('../../core/registry');
@@ -44,9 +44,14 @@ async function browseRegistry(options = {}) {
   }));
 
   const SUBMIT = '__submit__';
+  const BACK = '__back__';
   searchChoices.push({
     name: format.dim('Submit a repo...'),
     value: SUBMIT,
+  });
+  searchChoices.push({
+    name: format.dim('Back to main menu'),
+    value: BACK,
   });
 
   while (true) {
@@ -58,7 +63,7 @@ async function browseRegistry(options = {}) {
           if (!input) return searchChoices;
           const q = input.toLowerCase();
           return searchChoices.filter((c) =>
-            c.value === SUBMIT ||
+            c.value === SUBMIT || c.value === BACK ||
             c.value.name.toLowerCase().includes(q) ||
             c.value.description.toLowerCase().includes(q) ||
             (Array.isArray(c.value.tags) && c.value.tags.some((t) => t.toLowerCase().includes(q)))
@@ -70,8 +75,10 @@ async function browseRegistry(options = {}) {
       return;
     }
 
+    if (selected === BACK) return;
+
     if (selected === SUBMIT) {
-      await submitRepo({ skitHome: options.skitHome, _open: openFn });
+      await submitRepo({ skitHome: options.skitHome, _open: openFn, _inquirer: options._inquirer, _fetch: options._fetch });
       continue; // back to search after submit
     }
 
@@ -126,7 +133,8 @@ async function showSkillDetail(entry, options = {}) {
  */
 async function submitRepo(options = {}) {
   const openFn = options._open || require('open');
-  const inquirer = require('inquirer');
+  const inquirer = options._inquirer || require('inquirer');
+  const fetchFn = options._fetch || globalThis.fetch;
 
   let url = '';
   while (true) {
@@ -157,7 +165,7 @@ async function submitRepo(options = {}) {
 
   let hasSkillMd = false;
   try {
-    const res = await globalThis.fetch(skillMdUrl);
+    const res = await fetchFn(skillMdUrl);
     hasSkillMd = res.ok;
   } catch {
     console.log(format.warn('Could not check for SKILL.md (network error) — proceeding anyway.'));

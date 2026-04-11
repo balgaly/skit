@@ -84,7 +84,11 @@ async function clone(userOrUrl, options = {}) {
     // Direct URL provided
     profileUrl = userOrUrl;
   } else {
-    // Treat as GitHub username
+    // Treat as GitHub username — validate before using in API path
+    if (!/^[a-zA-Z0-9_-]+$/.test(userOrUrl)) {
+      console.log(format.error(`\n  Error: Invalid GitHub username: ${userOrUrl}`));
+      return;
+    }
     console.log(format.info(`\n  Fetching ${userOrUrl}'s profile...`));
 
     try {
