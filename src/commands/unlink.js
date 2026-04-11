@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const chalk = require('chalk');
+const format = require('../ui/format');
 
 const { unlinkSkill, isLinked } = require('../core/linker');
 const { getAgentAdapter } = require('../index');
@@ -19,13 +19,13 @@ function unlink(skillName, options = {}) {
 
   // Validate: skill exists in agent directory
   if (!fs.existsSync(targetPath)) {
-    console.log(chalk.red(`Error: skill "${skillName}" not found in ${agentSkillDir}`));
+    console.log(format.error(`Error: skill "${skillName}" not found in ${agentSkillDir}`));
     return;
   }
 
   // Validate: it's actually a symlink/junction
   if (!isLinked(targetPath)) {
-    console.log(chalk.red(`Error: "${skillName}" is not a link — refusing to remove a real directory`));
+    console.log(format.error(`Error: "${skillName}" is not a link — refusing to remove a real directory`));
     return;
   }
 
@@ -33,9 +33,9 @@ function unlink(skillName, options = {}) {
   unlinkSkill(targetPath);
 
   console.log(
-    chalk.green(`Unlinked `) +
-    chalk.bold(skillName) +
-    chalk.green(` from ${agentSkillDir}`)
+    format.success(`Unlinked `) +
+    format.bold(skillName) +
+    format.success(` from ${agentSkillDir}`)
   );
 }
 

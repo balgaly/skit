@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const EMPTY_MANIFEST = { version: 1, sources: {}, skills: {} };
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 function readManifest(skitHome) {
   const manifestPath = path.join(skitHome, 'manifest.json');
@@ -23,6 +24,7 @@ function writeManifest(skitHome, manifest) {
 }
 
 function addSource(skitHome, name, sourceData) {
+  if (DANGEROUS_KEYS.has(name)) throw new Error(`Invalid source name: ${name}`);
   const manifest = readManifest(skitHome);
   manifest.sources[name] = sourceData;
   writeManifest(skitHome, manifest);
@@ -41,6 +43,7 @@ function removeSource(skitHome, name) {
 }
 
 function addSkill(skitHome, skillName, skillData) {
+  if (DANGEROUS_KEYS.has(skillName)) throw new Error(`Invalid skill name: ${skillName}`);
   const manifest = readManifest(skitHome);
   manifest.skills[skillName] = skillData;
   writeManifest(skitHome, manifest);

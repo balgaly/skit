@@ -2,7 +2,9 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const chalk = require('chalk');
+const format = require('../ui/format');
+const { spinner } = require('../ui/spinner');
+const { pickSkills } = require('../ui/picker');
 
 const { cloneRepo } = require('../core/git');
 const { scanForSkills } = require('../core/scanner');
@@ -71,30 +73,24 @@ async function install(source, options = {}) {
     const targetDir = path.join(skitHome, 'sources', sourceType, sourceName);
 
     if (fs.existsSync(targetDir)) {
-      console.log(chalk.red(`Error: source "${sourceName}" already exists at ${targetDir}`));
+      console.log(format.error(`Error: source "${sourceName}" already exists at ${targetDir}`));
       return;
     }
 
     // Security warning for external sources
     if (sourceType === 'external') {
-      console.log(chalk.yellow(`\n  Warning: Installing skills from external source "${sourceName}"`));
-      console.log(chalk.dim(`  Review the skills before using them with sensitive code.\n`));
+      console.log(format.warn(`\n  Warning: Installing skills from external source "${sourceName}"`));
+      console.log(format.dim(`  Review the skills before using them with sensitive code.\n`));
     }
 
-    let spinner;
-    try {
-      const ora = require('ora');
-      spinner = ora(`Cloning ${sourceName}...`).start();
-    } catch {
-      console.log(chalk.cyan(`Cloning ${sourceName}...`));
-    }
+    const s = spinner(`Cloning ${sourceName}...`).start();
 
     try {
       cloneRepo(source, targetDir);
-      if (spinner) spinner.succeed(`Cloned ${sourceName}`);
+      s.succeed(`Cloned ${sourceName}`);
     } catch (err) {
-      if (spinner) spinner.fail(`Failed to clone ${sourceName}`);
-      console.log(chalk.red(`Error: ${err.message}`));
+      s.fail(`Failed to clone ${sourceName}`);
+      console.log(format.error(`Error: ${err.message}`));
       return;
     }
 
@@ -105,12 +101,12 @@ async function install(source, options = {}) {
     sourceName = path.basename(localDir);
 
     if (!fs.existsSync(localDir)) {
-      console.log(chalk.red(`Error: path does not exist: ${localDir}`));
+      console.log(format.error(`Error: path does not exist: ${localDir}`));
       return;
     }
 
     if (!fs.statSync(localDir).isDirectory()) {
-      console.log(chalk.red(`Error: not a directory: ${localDir}`));
+      console.log(format.error(`Error: not a directory: ${localDir}`));
       return;
     }
 
@@ -129,7 +125,7 @@ async function install(source, options = {}) {
   const skills = scanForSkills(sourceDir);
 
   if (skills.length === 0) {
-    console.log(chalk.red(`No skills found in ${sourceDir}`));
+    console.log(format.error(`No skills found in ${sourceDir}`));
     return;
   }
 
@@ -142,31 +138,15 @@ async function install(source, options = {}) {
   } else {
     // Interactive picker
     try {
-      const inquirer = require('inquirer');
-      const choices = skills.map((s) => ({
-        name: `${s.name}  ${chalk.dim('- ' + (s.description || 'No description'))}`,
-        value: s,
-        checked: false,
-      }));
-
-      const answers = await inquirer.prompt([
-        {
-          type: 'checkbox',
-          name: 'skills',
-          message: `Found ${skills.length} skills. Select which to install:`,
-          choices,
-        },
-      ]);
-
-      selectedSkills = answers.skills;
+      selectedSkills = await pickSkills(skills, options);
 
       if (selectedSkills.length === 0) {
-        console.log(chalk.yellow('No skills selected — nothing to install.'));
+        console.log(format.warn('No skills selected — nothing to install.'));
         return;
       }
     } catch (err) {
       // If inquirer is not available or fails, fall back to all
-      console.log(chalk.yellow('Interactive picker unavailable, installing all skills.'));
+      console.log(format.warn('Interactive picker unavailable, installing all skills.'));
       selectedSkills = skills;
     }
   }
@@ -187,7 +167,7 @@ async function install(source, options = {}) {
     const targetPath = path.join(agentSkillDir, skill.name);
 
     if (fs.existsSync(targetPath)) {
-      console.log(chalk.yellow(`  Skipping "${skill.name}" — already exists at ${targetPath}`));
+      console.log(format.warn(`  Skipping "${skill.name}" — already exists at ${targetPath}`));
       continue;
     }
 
@@ -202,19 +182,19 @@ async function install(source, options = {}) {
       });
       installed.push(skill);
     } catch (err) {
-      console.log(chalk.red(`  Failed to install "${skill.name}": ${err.message}`));
+      console.log(format.error(`  Failed to install "${skill.name}": ${err.message}`));
     }
   }
 
   // Summary
   if (installed.length === 0) {
-    console.log(chalk.yellow('No new skills were installed.'));
+    console.log(format.warn('No new skills were installed.'));
   } else {
     console.log('');
-    console.log(chalk.green(`Installed ${installed.length} skill${installed.length === 1 ? '' : 's'} from ${sourceName}`));
+    console.log(format.success(`Installed ${installed.length} skill${installed.length === 1 ? '' : 's'} from ${sourceName}`));
     for (const skill of installed) {
       const targetPath = path.join(agentSkillDir, skill.name);
-      console.log(chalk.dim(`  ${skill.name}`) + chalk.dim(` -> ${targetPath}`));
+      console.log(format.dim(`  ${skill.name}`) + format.dim(` -> ${targetPath}`));
     }
   }
 }

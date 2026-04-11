@@ -41,9 +41,11 @@
     "LICENSE"
   ],
   "dependencies": {
+    "@inquirer/search": "^4.1.6",
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
     "inquirer": "^8.2.6",
+    "open": "^8.4.2",
     "ora": "^5.4.1"
   }
 }

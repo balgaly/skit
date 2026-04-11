@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const chalk = require('chalk');
+const format = require('../ui/format');
 
 const { linkSkill, unlinkSkill, isLinked, getLinkTarget } = require('../core/linker');
 const { readManifest, listSources } = require('../core/manifest');
@@ -39,7 +39,7 @@ function sync(options = {}) {
   // Show progress
   const totalSkills = Object.keys(skills).length;
   if (totalSkills > 0) {
-    console.log(chalk.cyan(`\n  Syncing ${totalSkills} skill${totalSkills === 1 ? '' : 's'}...\n`));
+    console.log(format.info(`\n  Syncing ${totalSkills} skill${totalSkills === 1 ? '' : 's'}...\n`));
   }
 
   // Step 1: Create missing junctions for skills in manifest
@@ -49,7 +49,7 @@ function sync(options = {}) {
     // Resolve the source path: source.path + skill.path
     const source = sources[skillData.source];
     if (!source) {
-      console.log(chalk.yellow(`Warning: source "${skillData.source}" not found for skill "${skillName}" — skipping`));
+      console.log(format.warn(`Warning: source "${skillData.source}" not found for skill "${skillName}" — skipping`));
       continue;
     }
 
@@ -57,7 +57,7 @@ function sync(options = {}) {
 
     // Check if source directory exists
     if (!fs.existsSync(sourcePath)) {
-      console.log(chalk.yellow(`Warning: source path does not exist for "${skillName}": ${sourcePath} — skipping`));
+      console.log(format.warn(`Warning: source path does not exist for "${skillName}": ${sourcePath} — skipping`));
       continue;
     }
 
@@ -81,7 +81,7 @@ function sync(options = {}) {
       linkSkill(sourcePath, targetPath);
       created++;
     } catch (err) {
-      console.log(chalk.red(`Error linking "${skillName}": ${err.message}`));
+      console.log(format.error(`Error linking "${skillName}": ${err.message}`));
     }
   }
 
@@ -101,12 +101,12 @@ function sync(options = {}) {
 
   // Step 3: Report summary
   console.log(
-    chalk.green(`Sync complete: `) +
-    chalk.bold(`${created} created`) +
-    chalk.dim(', ') +
-    chalk.bold(`${removed} removed`) +
-    chalk.dim(', ') +
-    chalk.bold(`${alreadyLinked} already linked`)
+    format.success(`Sync complete: `) +
+    format.bold(`${created} created`) +
+    format.dim(', ') +
+    format.bold(`${removed} removed`) +
+    format.dim(', ') +
+    format.bold(`${alreadyLinked} already linked`)
   );
 }
 

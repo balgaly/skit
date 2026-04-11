@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const chalk = require('chalk');
+const format = require('../ui/format');
 
 const { linkSkill } = require('../core/linker');
 const { parseFrontmatter } = require('../core/scanner');
@@ -18,14 +18,14 @@ function link(skillPath, options = {}) {
 
   // Validate: path exists
   if (!fs.existsSync(resolved)) {
-    console.log(chalk.red(`Error: path does not exist: ${resolved}`));
+    console.log(format.error(`Error: path does not exist: ${resolved}`));
     return;
   }
 
   // Validate: path contains SKILL.md
   const skillMdPath = path.join(resolved, 'SKILL.md');
   if (!fs.existsSync(skillMdPath)) {
-    console.log(chalk.red(`Error: not a valid skill — SKILL.md not found in ${resolved}`));
+    console.log(format.error(`Error: not a valid skill — SKILL.md not found in ${resolved}`));
     return;
   }
 
@@ -45,7 +45,7 @@ function link(skillPath, options = {}) {
 
   // Check if already exists
   if (fs.existsSync(targetPath)) {
-    console.log(chalk.red(`Error: skill "${skillName}" already exists at ${targetPath}`));
+    console.log(format.error(`Error: skill "${skillName}" already exists at ${targetPath}`));
     return;
   }
 
@@ -53,9 +53,9 @@ function link(skillPath, options = {}) {
   linkSkill(resolved, targetPath);
 
   console.log(
-    chalk.green(`Linked `) +
-    chalk.bold(skillName) +
-    chalk.green(` → ${targetPath}`)
+    format.success(`Linked `) +
+    format.bold(skillName) +
+    format.success(` → ${targetPath}`)
   );
 }
 

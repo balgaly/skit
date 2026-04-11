@@ -1,6 +1,6 @@
 'use strict';
 
-const chalk = require('chalk');
+const format = require('../ui/format');
 const { resolveSkitHome, ensureDirs } = require('../index');
 const { getConfigValue, setConfigValue } = require('../core/config');
 const { listAdapters } = require('../agents/index');
@@ -14,7 +14,7 @@ const VALID_KEYS = ['agent', 'user', 'skitHome'];
  */
 function configGet(key, options) {
   if (!VALID_KEYS.includes(key)) {
-    console.log(chalk.red(`Invalid config key: "${key}". Valid keys: ${VALID_KEYS.join(', ')}`));
+    console.log(format.error(`Invalid config key: "${key}". Valid keys: ${VALID_KEYS.join(', ')}`));
     return;
   }
 
@@ -24,7 +24,7 @@ function configGet(key, options) {
   const value = getConfigValue(skitHome, key);
 
   if (value === null || value === undefined) {
-    console.log(chalk.yellow(`${key} is not set`));
+    console.log(format.warn(`${key} is not set`));
   } else {
     console.log(value);
   }
@@ -38,14 +38,14 @@ function configGet(key, options) {
  */
 function configSet(key, value, options) {
   if (!VALID_KEYS.includes(key)) {
-    console.log(chalk.red(`Invalid config key: "${key}". Valid keys: ${VALID_KEYS.join(', ')}`));
+    console.log(format.error(`Invalid config key: "${key}". Valid keys: ${VALID_KEYS.join(', ')}`));
     return;
   }
 
   if (key === 'agent') {
     const valid = listAdapters();
     if (!valid.includes(value)) {
-      console.log(chalk.red(`Unknown agent: "${value}". Available: ${valid.join(', ')}`));
+      console.log(format.error(`Unknown agent: "${value}". Available: ${valid.join(', ')}`));
       return;
     }
   }
@@ -54,7 +54,7 @@ function configSet(key, value, options) {
   ensureDirs(skitHome);
 
   setConfigValue(skitHome, key, value);
-  console.log(chalk.green(`Set ${key} = ${value}`));
+  console.log(format.success(`Set ${key} = ${value}`));
 }
 
 module.exports = { configGet, configSet, VALID_KEYS };

@@ -5,7 +5,8 @@ const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
-const chalk = require('chalk');
+const format = require('../ui/format');
+const { spinner } = require('../ui/spinner');
 
 const { listSkills, listSources, addSource, addSkill, getSkill, getSource } = require('../core/manifest');
 const { readConfig, setConfigValue, getConfigValue } = require('../core/config');
@@ -74,9 +75,9 @@ async function profileImport(filePath, options = {}) {
     profile = JSON.parse(raw);
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.log(chalk.red(`Error: profile file not found: ${filePath}`));
+      console.log(format.error(`Error: profile file not found: ${filePath}`));
     } else {
-      console.log(chalk.red(`Error: failed to parse profile file: ${err.message}`));
+      console.log(format.error(`Error: failed to parse profile file: ${err.message}`));
     }
     return;
   }
@@ -104,7 +105,7 @@ async function profileImport(filePath, options = {}) {
 
     // Skip sources with no origin (e.g., _standalone)
     if (!origin) {
-      console.log(chalk.yellow(`  Skipping source "${name}" — no origin URL`));
+      console.log(format.warn(`  Skipping source "${name}" — no origin URL`));
       sourcesSkipped++;
       continue;
     }
@@ -112,7 +113,7 @@ async function profileImport(filePath, options = {}) {
     // Check if already present by matching origin URL
     const existing = existingSources[name];
     if (existing && existing.origin === origin) {
-      console.log(chalk.dim(`  Skipping source "${name}" — already cloned`));
+      console.log(format.dim(`  Skipping source "${name}" — already cloned`));
       sourcesSkipped++;
       continue;
     }
@@ -122,22 +123,16 @@ async function profileImport(filePath, options = {}) {
     const targetDir = path.join(skitHome, 'sources', sourceType, name);
 
     if (fs.existsSync(targetDir)) {
-      console.log(chalk.dim(`  Skipping source "${name}" — directory already exists`));
+      console.log(format.dim(`  Skipping source "${name}" — directory already exists`));
       sourcesSkipped++;
       continue;
     }
 
-    let spinner;
-    try {
-      const ora = require('ora');
-      spinner = ora(`Cloning ${name}...`).start();
-    } catch {
-      console.log(chalk.cyan(`  Cloning ${name}...`));
-    }
+    const s = spinner(`Cloning ${name}...`).start();
 
     try {
       cloneRepo(origin, targetDir);
-      if (spinner) spinner.succeed(`Cloned ${name}`);
+      s.succeed(`Cloned ${name}`);
 
       addSource(skitHome, name, {
         type: sourceType,
@@ -147,8 +142,8 @@ async function profileImport(filePath, options = {}) {
       });
       sourcesCloned++;
     } catch (err) {
-      if (spinner) spinner.fail(`Failed to clone ${name}`);
-      console.log(chalk.red(`  Error cloning "${name}": ${err.message}`));
+      s.fail(`Failed to clone ${name}`);
+      console.log(format.error(`  Error cloning "${name}": ${err.message}`));
     }
   }
 
@@ -166,7 +161,7 @@ async function profileImport(filePath, options = {}) {
     if (importedFrom || sourceName === '_standalone') {
       const origin = sourceOrigins[sourceName];
       if (!origin) {
-        console.log(chalk.yellow(`  Skipping skill "${name}" — standalone/importedFrom (no source origin)`));
+        console.log(format.warn(`  Skipping skill "${name}" — standalone/importedFrom (no source origin)`));
         skillsSkipped++;
         continue;
       }
@@ -175,7 +170,7 @@ async function profileImport(filePath, options = {}) {
     // Check if skill already installed
     const existingSkill = getSkill(skitHome, name);
     if (existingSkill) {
-      console.log(chalk.dim(`  Skipping skill "${name}" — already installed`));
+      console.log(format.dim(`  Skipping skill "${name}" — already installed`));
       skillsSkipped++;
       continue;
     }
@@ -183,7 +178,7 @@ async function profileImport(filePath, options = {}) {
     // Find the source directory
     const sourceData = updatedSources[sourceName];
     if (!sourceData || !sourceData.path) {
-      console.log(chalk.yellow(`  Skipping skill "${name}" — source "${sourceName}" not available`));
+      console.log(format.warn(`  Skipping skill "${name}" — source "${sourceName}" not available`));
       skillsSkipped++;
       continue;
     }
@@ -195,7 +190,7 @@ async function profileImport(filePath, options = {}) {
     const skillInfo = availableSkills.find((s) => s.name === name);
 
     if (!skillInfo) {
-      console.log(chalk.yellow(`  Skipping skill "${name}" — not found in source "${sourceName}"`));
+      console.log(format.warn(`  Skipping skill "${name}" — not found in source "${sourceName}"`));
       skillsSkipped++;
       continue;
     }
@@ -204,7 +199,7 @@ async function profileImport(filePath, options = {}) {
     const targetPath = path.join(agentSkillDir, name);
 
     if (fs.existsSync(targetPath)) {
-      console.log(chalk.dim(`  Skipping skill "${name}" — already exists at target`));
+      console.log(format.dim(`  Skipping skill "${name}" — already exists at target`));
       skillsSkipped++;
       continue;
     }
@@ -219,15 +214,15 @@ async function profileImport(filePath, options = {}) {
       });
       skillsLinked++;
     } catch (err) {
-      console.log(chalk.red(`  Failed to link skill "${name}": ${err.message}`));
+      console.log(format.error(`  Failed to link skill "${name}": ${err.message}`));
     }
   }
 
   // Summary
   console.log('');
-  console.log(chalk.green(`Profile import complete:`));
-  console.log(chalk.dim(`  Sources: ${sourcesCloned} cloned, ${sourcesSkipped} skipped`));
-  console.log(chalk.dim(`  Skills:  ${skillsLinked} linked, ${skillsSkipped} skipped`));
+  console.log(format.success(`Profile import complete:`));
+  console.log(format.dim(`  Sources: ${sourcesCloned} cloned, ${sourcesSkipped} skipped`));
+  console.log(format.dim(`  Skills:  ${skillsLinked} linked, ${skillsSkipped} skipped`));
 }
 
 /**
@@ -248,9 +243,9 @@ function profileDiff(filePath, options = {}) {
     profile = JSON.parse(raw);
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.log(chalk.red(`Error: profile file not found: ${filePath}`));
+      console.log(format.error(`Error: profile file not found: ${filePath}`));
     } else {
-      console.log(chalk.red(`Error: failed to parse profile file: ${err.message}`));
+      console.log(format.error(`Error: failed to parse profile file: ${err.message}`));
     }
     return;
   }
@@ -291,30 +286,30 @@ function profileDiff(filePath, options = {}) {
   // Display results
   const user = profile.user || 'them';
 
-  console.log(chalk.bold(`\n  Skills you're missing (${missing.length}):`));
+  console.log(format.bold(`\n  Skills you're missing (${missing.length}):`));
   if (missing.length === 0) {
-    console.log(chalk.dim('    (none)'));
+    console.log(format.dim('    (none)'));
   } else {
     for (const { name, source } of missing) {
-      console.log(chalk.green(`    + ${name}`) + chalk.dim(`    @${source}`));
+      console.log(format.success(`    + ${name}`) + format.dim(`    @${source}`));
     }
   }
 
-  console.log(chalk.bold(`\n  Skills only you have (${extra.length}):`));
+  console.log(format.bold(`\n  Skills only you have (${extra.length}):`));
   if (extra.length === 0) {
-    console.log(chalk.dim('    (none)'));
+    console.log(format.dim('    (none)'));
   } else {
     for (const { name, source } of extra) {
-      console.log(chalk.red(`    - ${name}`) + chalk.dim(`    @${source}`));
+      console.log(format.error(`    - ${name}`) + format.dim(`    @${source}`));
     }
   }
 
-  console.log(chalk.bold(`\n  Same skills, different source (${diverged.length}):`));
+  console.log(format.bold(`\n  Same skills, different source (${diverged.length}):`));
   if (diverged.length === 0) {
-    console.log(chalk.dim('    (none)'));
+    console.log(format.dim('    (none)'));
   } else {
     for (const { name, ourSource, theirSource } of diverged) {
-      console.log(chalk.yellow(`    ~ ${name}`) + chalk.dim(`    yours: @${ourSource}  theirs: @${theirSource}`));
+      console.log(format.warn(`    ~ ${name}`) + format.dim(`    yours: @${ourSource}  theirs: @${theirSource}`));
     }
   }
 
@@ -377,7 +372,7 @@ function profilePush(options = {}) {
       // Extract gist ID from URL (e.g., https://gist.github.com/user/abc123 -> abc123)
       const gistIdMatch = existingGistUrl.match(/gist\.github\.com\/[^\/]+\/([a-zA-Z0-9]+)/);
       if (!gistIdMatch) {
-        console.log(chalk.red(`Error: Invalid gist URL in config: ${existingGistUrl}`));
+        console.log(format.error(`Error: Invalid gist URL in config: ${existingGistUrl}`));
         return;
       }
       const gistId = gistIdMatch[1];
@@ -395,14 +390,14 @@ function profilePush(options = {}) {
           { encoding: 'utf-8' }
         );
         gistUrl = existingGistUrl; // Keep the same URL
-        console.log(chalk.green(`\n  Updated profile gist: ${gistUrl}`));
+        console.log(format.success(`\n  Updated profile gist: ${gistUrl}`));
       } catch (err) {
         if (err.code === 'ENOENT') {
-          console.log(chalk.red('\n  Error: GitHub CLI (gh) not found.'));
-          console.log(chalk.dim('  Install it from: https://cli.github.com'));
+          console.log(format.error('\n  Error: GitHub CLI (gh) not found.'));
+          console.log(format.dim('  Install it from: https://cli.github.com'));
           return;
         }
-        console.log(chalk.red(`\n  Error updating gist: ${err.message}`));
+        console.log(format.error(`\n  Error updating gist: ${err.message}`));
         return;
       }
     } else {
@@ -424,21 +419,21 @@ function profilePush(options = {}) {
         // Store the gist URL in config for future updates
         setConfigValue(skitHome, 'gistUrl', gistUrl);
 
-        console.log(chalk.green(`\n  Published profile gist: ${gistUrl}`));
+        console.log(format.success(`\n  Published profile gist: ${gistUrl}`));
       } catch (err) {
         if (err.code === 'ENOENT') {
-          console.log(chalk.red('\n  Error: GitHub CLI (gh) not found.'));
-          console.log(chalk.dim('  Install it from: https://cli.github.com'));
+          console.log(format.error('\n  Error: GitHub CLI (gh) not found.'));
+          console.log(format.dim('  Install it from: https://cli.github.com'));
           return;
         }
-        console.log(chalk.red(`\n  Error creating gist: ${err.message}`));
+        console.log(format.error(`\n  Error creating gist: ${err.message}`));
         return;
       }
     }
 
     // Print shareable command
     if (config.user) {
-      console.log(chalk.dim(`\n  Share your profile:\n  ${chalk.cyan(`npx skit clone ${config.user}`)}`));
+      console.log(format.dim(`\n  Share your profile:\n  ${format.info(`npx skit clone ${config.user}`)}`));
     }
     console.log('');
   } finally {

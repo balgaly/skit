@@ -2,7 +2,8 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const chalk = require('chalk');
+const format = require('../ui/format');
+const { spinner } = require('../ui/spinner');
 
 const { detectUrlType, downloadFile, wrapAsSkill } = require('../core/importer');
 const { linkSkill } = require('../core/linker');
@@ -36,7 +37,7 @@ function deriveSkillName(filename) {
  */
 async function importSkill(url, options = {}) {
   if (!url || typeof url !== 'string' || !url.trim()) {
-    console.log(chalk.red('Error: URL or path is required'));
+    console.log(format.error('Error: URL or path is required'));
     return;
   }
 
@@ -48,14 +49,14 @@ async function importSkill(url, options = {}) {
   fs.mkdirSync(agentSkillDir, { recursive: true });
 
   // Security warning for external imports
-  console.log(chalk.yellow(`\n  Warning: Importing skill from external source`));
-  console.log(chalk.dim(`  Review the skill content before using it with sensitive code.\n`));
+  console.log(format.warn(`\n  Warning: Importing skill from external source`));
+  console.log(format.dim(`  Review the skill content before using it with sensitive code.\n`));
 
   let detected;
   try {
     detected = detectUrlType(trimmedUrl);
   } catch (err) {
-    console.log(chalk.red(`Error: ${err.message}`));
+    console.log(format.error(`Error: ${err.message}`));
     return;
   }
 
@@ -64,7 +65,7 @@ async function importSkill(url, options = {}) {
   switch (type) {
     case 'github-repo':
       // Delegate to install command
-      console.log(chalk.cyan(`Detected: GitHub repo (${parsed.user}/${parsed.repo})`));
+      console.log(format.info(`Detected: GitHub repo (${parsed.user}/${parsed.repo})`));
       await install(trimmedUrl, options);
       return;
 
@@ -94,7 +95,7 @@ async function importSkill(url, options = {}) {
       return;
 
     default:
-      console.log(chalk.red(`Error: unsupported URL type: ${type}`));
+      console.log(format.error(`Error: unsupported URL type: ${type}`));
   }
 }
 
@@ -105,13 +106,13 @@ async function importLocalFile(filePath, skitHome, agentSkillDir) {
   const resolvedPath = path.resolve(filePath);
 
   if (!fs.existsSync(resolvedPath)) {
-    console.log(chalk.red(`Error: file does not exist: ${resolvedPath}`));
+    console.log(format.error(`Error: file does not exist: ${resolvedPath}`));
     return;
   }
 
   const stat = fs.statSync(resolvedPath);
   if (!stat.isFile()) {
-    console.log(chalk.red(`Error: not a file: ${resolvedPath}`));
+    console.log(format.error(`Error: not a file: ${resolvedPath}`));
     return;
   }
 
@@ -120,7 +121,7 @@ async function importLocalFile(filePath, skitHome, agentSkillDir) {
   const standaloneDir = path.join(skitHome, 'sources', 'external', '_standalone', skillName);
 
   if (fs.existsSync(standaloneDir)) {
-    console.log(chalk.red(`Error: skill "${skillName}" already exists at ${standaloneDir}`));
+    console.log(format.error(`Error: skill "${skillName}" already exists at ${standaloneDir}`));
     return;
   }
 
@@ -137,7 +138,7 @@ async function importLocalFile(filePath, skitHome, agentSkillDir) {
   try {
     linkSkill(standaloneDir, targetPath);
   } catch (err) {
-    console.log(chalk.red(`Error linking skill: ${err.message}`));
+    console.log(format.error(`Error linking skill: ${err.message}`));
     return;
   }
 
@@ -150,8 +151,8 @@ async function importLocalFile(filePath, skitHome, agentSkillDir) {
     installedAt: new Date().toISOString(),
   });
 
-  console.log(chalk.green(`Installed ${skillName} from local file`));
-  console.log(chalk.dim(`  ${skillName} -> ${targetPath}`));
+  console.log(format.success(`Installed ${skillName} from local file`));
+  console.log(format.dim(`  ${skillName} -> ${targetPath}`));
 }
 
 /**
@@ -164,26 +165,20 @@ async function importRawFile(downloadUrl, originalUrl, skitHome, agentSkillDir) 
   const standaloneDir = path.join(skitHome, 'sources', 'external', '_standalone', skillName);
 
   if (fs.existsSync(standaloneDir)) {
-    console.log(chalk.red(`Error: skill "${skillName}" already exists at ${standaloneDir}`));
+    console.log(format.error(`Error: skill "${skillName}" already exists at ${standaloneDir}`));
     return;
   }
 
   fs.mkdirSync(standaloneDir, { recursive: true });
 
-  let spinner;
-  try {
-    const ora = require('ora');
-    spinner = ora(`Downloading ${filename}...`).start();
-  } catch {
-    console.log(chalk.cyan(`Downloading ${filename}...`));
-  }
+  const s = spinner(`Downloading ${filename}...`).start();
 
   try {
     await downloadFile(downloadUrl, path.join(standaloneDir, filename));
-    if (spinner) spinner.succeed(`Downloaded ${filename}`);
+    s.succeed(`Downloaded ${filename}`);
   } catch (err) {
-    if (spinner) spinner.fail(`Failed to download ${filename}`);
-    console.log(chalk.red(`Error: ${err.message}`));
+    s.fail(`Failed to download ${filename}`);
+    console.log(format.error(`Error: ${err.message}`));
     // Clean up
     fs.rmSync(standaloneDir, { recursive: true, force: true });
     return;
@@ -197,7 +192,7 @@ async function importRawFile(downloadUrl, originalUrl, skitHome, agentSkillDir) 
   try {
     linkSkill(standaloneDir, targetPath);
   } catch (err) {
-    console.log(chalk.red(`Error linking skill: ${err.message}`));
+    console.log(format.error(`Error linking skill: ${err.message}`));
     return;
   }
 
@@ -210,8 +205,8 @@ async function importRawFile(downloadUrl, originalUrl, skitHome, agentSkillDir) 
     installedAt: new Date().toISOString(),
   });
 
-  console.log(chalk.green(`Installed ${skillName} from ${originalUrl}`));
-  console.log(chalk.dim(`  ${skillName} -> ${targetPath}`));
+  console.log(format.success(`Installed ${skillName} from ${originalUrl}`));
+  console.log(format.dim(`  ${skillName} -> ${targetPath}`));
 }
 
 /**
@@ -220,13 +215,7 @@ async function importRawFile(downloadUrl, originalUrl, skitHome, agentSkillDir) 
 async function importGist(url, parsed, skitHome, agentSkillDir) {
   const { id } = parsed;
 
-  let spinner;
-  try {
-    const ora = require('ora');
-    spinner = ora('Fetching Gist metadata...').start();
-  } catch {
-    console.log(chalk.cyan('Fetching Gist metadata...'));
-  }
+  const s = spinner('Fetching Gist metadata...').start();
 
   // Fetch gist API
   const https = require('node:https');
@@ -250,17 +239,17 @@ async function importGist(url, parsed, skitHome, agentSkillDir) {
         });
       }).on('error', (err) => reject(new Error(`Failed to fetch Gist: ${err.message}`)));
     });
-    if (spinner) spinner.succeed('Fetched Gist metadata');
+    s.succeed('Fetched Gist metadata');
   } catch (err) {
-    if (spinner) spinner.fail('Failed to fetch Gist');
-    console.log(chalk.red(`Error: ${err.message}`));
+    s.fail('Failed to fetch Gist');
+    console.log(format.error(`Error: ${err.message}`));
     return;
   }
 
   // Derive skill name from gist description or first filename
   const files = Object.keys(gistData.files || {});
   if (files.length === 0) {
-    console.log(chalk.red('Error: Gist has no files'));
+    console.log(format.error('Error: Gist has no files'));
     return;
   }
 
@@ -268,13 +257,13 @@ async function importGist(url, parsed, skitHome, agentSkillDir) {
     ? gistData.description.replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 50) || deriveSkillName(files[0])
     : deriveSkillName(files[0]);
 
-  console.log(chalk.cyan(`Detected: GitHub Gist (${files.length} file${files.length === 1 ? '' : 's'})`));
-  console.log(chalk.cyan(`Skill name: ${skillName}`));
+  console.log(format.info(`Detected: GitHub Gist (${files.length} file${files.length === 1 ? '' : 's'})`));
+  console.log(format.info(`Skill name: ${skillName}`));
 
   const standaloneDir = path.join(skitHome, 'sources', 'external', '_standalone', skillName);
 
   if (fs.existsSync(standaloneDir)) {
-    console.log(chalk.red(`Error: skill "${skillName}" already exists at ${standaloneDir}`));
+    console.log(format.error(`Error: skill "${skillName}" already exists at ${standaloneDir}`));
     return;
   }
 
@@ -283,7 +272,7 @@ async function importGist(url, parsed, skitHome, agentSkillDir) {
   // Download each gist file
   for (const fileName of files) {
     const fileData = gistData.files[fileName];
-    const fileDest = path.join(standaloneDir, fileName);
+    const fileDest = path.join(standaloneDir, path.basename(fileName));
     if (fileData.content) {
       // Content is inline in API response
       fs.writeFileSync(fileDest, fileData.content, 'utf-8');
@@ -291,7 +280,7 @@ async function importGist(url, parsed, skitHome, agentSkillDir) {
       try {
         await downloadFile(fileData.raw_url, fileDest);
       } catch (err) {
-        console.log(chalk.yellow(`Warning: failed to download ${fileName}: ${err.message}`));
+        console.log(format.warn(`Warning: failed to download ${fileName}: ${err.message}`));
       }
     }
   }
@@ -304,7 +293,7 @@ async function importGist(url, parsed, skitHome, agentSkillDir) {
   try {
     linkSkill(standaloneDir, targetPath);
   } catch (err) {
-    console.log(chalk.red(`Error linking skill: ${err.message}`));
+    console.log(format.error(`Error linking skill: ${err.message}`));
     return;
   }
 
@@ -317,8 +306,8 @@ async function importGist(url, parsed, skitHome, agentSkillDir) {
     installedAt: new Date().toISOString(),
   });
 
-  console.log(chalk.green(`Installed ${skillName} from gist`));
-  console.log(chalk.dim(`  ${skillName} -> ${targetPath}`));
+  console.log(format.success(`Installed ${skillName} from gist`));
+  console.log(format.dim(`  ${skillName} -> ${targetPath}`));
 }
 
 /**
@@ -331,17 +320,11 @@ async function importSubfolder(url, parsed, skitHome, agentSkillDir) {
   const standaloneDir = path.join(skitHome, 'sources', 'external', '_standalone', skillName);
 
   if (fs.existsSync(standaloneDir)) {
-    console.log(chalk.red(`Error: skill "${skillName}" already exists at ${standaloneDir}`));
+    console.log(format.error(`Error: skill "${skillName}" already exists at ${standaloneDir}`));
     return;
   }
 
-  let spinner;
-  try {
-    const ora = require('ora');
-    spinner = ora(`Cloning ${user}/${repo} (sparse)...`).start();
-  } catch {
-    console.log(chalk.cyan(`Cloning ${user}/${repo}...`));
-  }
+  const s = spinner(`Cloning ${user}/${repo} (sparse)...`).start();
 
   // Clone the repo to a temp dir, then extract the subfolder
   const { cloneRepo } = require('../core/git');
@@ -349,10 +332,10 @@ async function importSubfolder(url, parsed, skitHome, agentSkillDir) {
 
   try {
     cloneRepo(`https://github.com/${user}/${repo}.git`, tmpCloneDir);
-    if (spinner) spinner.succeed(`Cloned ${user}/${repo}`);
+    s.succeed(`Cloned ${user}/${repo}`);
   } catch (err) {
-    if (spinner) spinner.fail(`Failed to clone ${user}/${repo}`);
-    console.log(chalk.red(`Error: ${err.message}`));
+    s.fail(`Failed to clone ${user}/${repo}`);
+    console.log(format.error(`Error: ${err.message}`));
     fs.rmSync(tmpCloneDir, { recursive: true, force: true });
     return;
   }
@@ -360,7 +343,7 @@ async function importSubfolder(url, parsed, skitHome, agentSkillDir) {
   // Copy the subfolder out
   const subfolderSrc = path.join(tmpCloneDir, ...subPath.split('/'));
   if (!fs.existsSync(subfolderSrc)) {
-    console.log(chalk.red(`Error: subfolder "${subPath}" not found in repository`));
+    console.log(format.error(`Error: subfolder "${subPath}" not found in repository`));
     fs.rmSync(tmpCloneDir, { recursive: true, force: true });
     return;
   }
@@ -379,7 +362,7 @@ async function importSubfolder(url, parsed, skitHome, agentSkillDir) {
   try {
     linkSkill(standaloneDir, targetPath);
   } catch (err) {
-    console.log(chalk.red(`Error linking skill: ${err.message}`));
+    console.log(format.error(`Error linking skill: ${err.message}`));
     return;
   }
 
@@ -392,8 +375,8 @@ async function importSubfolder(url, parsed, skitHome, agentSkillDir) {
     installedAt: new Date().toISOString(),
   });
 
-  console.log(chalk.green(`Installed ${skillName} from ${user}/${repo}/${subPath}`));
-  console.log(chalk.dim(`  ${skillName} -> ${targetPath}`));
+  console.log(format.success(`Installed ${skillName} from ${user}/${repo}/${subPath}`));
+  console.log(format.dim(`  ${skillName} -> ${targetPath}`));
 }
 
 module.exports = { importSkill, deriveSkillName };

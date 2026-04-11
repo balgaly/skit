@@ -5,7 +5,8 @@ const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
-const chalk = require('chalk');
+const format = require('../ui/format');
+const { spinner } = require('../ui/spinner');
 
 const { listSkills, listSources, addSource, addSkill, getSkill } = require('../core/manifest');
 const { cloneRepo } = require('../core/git');
@@ -83,20 +84,24 @@ async function clone(userOrUrl, options = {}) {
     // Direct URL provided
     profileUrl = userOrUrl;
   } else {
-    // Treat as GitHub username
-    console.log(chalk.cyan(`\n  Fetching ${userOrUrl}'s profile...`));
+    // Treat as GitHub username — validate before using in API path
+    if (!/^[a-zA-Z0-9_-]+$/.test(userOrUrl)) {
+      console.log(format.error(`\n  Error: Invalid GitHub username: ${userOrUrl}`));
+      return;
+    }
+    console.log(format.info(`\n  Fetching ${userOrUrl}'s profile...`));
 
     try {
       profileUrl = fetchProfileUrlFromUsername(userOrUrl, execFileSyncFn);
     } catch (err) {
-      console.log(chalk.red(`\n  Error: ${err.message}`));
+      console.log(format.error(`\n  Error: ${err.message}`));
       return;
     }
 
     if (!profileUrl) {
-      console.log(chalk.red(`\n  Error: No skit profile found for user "${userOrUrl}"`));
-      console.log(chalk.dim(`  They may not have published a profile yet.`));
-      console.log(chalk.dim(`  Ask them to run: ${chalk.cyan('skit profile push')}`));
+      console.log(format.error(`\n  Error: No skit profile found for user "${userOrUrl}"`));
+      console.log(format.dim(`  They may not have published a profile yet.`));
+      console.log(format.dim(`  Ask them to run: ${format.info('skit profile push')}`));
       return;
     }
   }
@@ -110,8 +115,8 @@ async function clone(userOrUrl, options = {}) {
     const raw = fs.readFileSync(tempFile, 'utf-8');
     profile = JSON.parse(raw);
   } catch (err) {
-    console.log(chalk.red(`\n  Error: Failed to fetch profile from ${profileUrl}`));
-    console.log(chalk.red(`  ${err.message}`));
+    console.log(format.error(`\n  Error: Failed to fetch profile from ${profileUrl}`));
+    console.log(format.error(`  ${err.message}`));
     return;
   } finally {
     // Clean up temp file
@@ -134,7 +139,7 @@ async function clone(userOrUrl, options = {}) {
   }
 
   // Show summary
-  console.log(chalk.bold(`\nFound ${profileSkills.length} skills from ${profileSources.length} sources:`));
+  console.log(format.bold(`\nFound ${profileSkills.length} skills from ${profileSources.length} sources:`));
   console.log('');
 
   // Group skills by source for display
@@ -149,8 +154,8 @@ async function clone(userOrUrl, options = {}) {
   for (const src of profileSources) {
     const skillNames = skillsBySource[src.name] || [];
     if (skillNames.length > 0) {
-      console.log(chalk.bold(`  ${src.name}`) + chalk.dim(` (${skillNames.length} skills)`));
-      console.log(chalk.dim(`    ${skillNames.join(', ')}`));
+      console.log(format.bold(`  ${src.name}`) + format.dim(` (${skillNames.length} skills)`));
+      console.log(format.dim(`    ${skillNames.join(', ')}`));
       console.log('');
     }
   }
@@ -167,7 +172,7 @@ async function clone(userOrUrl, options = {}) {
 
     // Skip sources with no origin (e.g., _standalone)
     if (!origin) {
-      console.log(chalk.yellow(`  Skipping source "${name}" — no origin URL`));
+      console.log(format.warn(`  Skipping source "${name}" — no origin URL`));
       sourcesSkipped++;
       continue;
     }
@@ -175,7 +180,7 @@ async function clone(userOrUrl, options = {}) {
     // Check if already present by matching origin URL
     const existing = existingSources[name];
     if (existing && existing.origin === origin) {
-      console.log(chalk.dim(`  Skipping source "${name}" — already cloned`));
+      console.log(format.dim(`  Skipping source "${name}" — already cloned`));
       sourcesSkipped++;
       continue;
     }
@@ -185,22 +190,16 @@ async function clone(userOrUrl, options = {}) {
     const targetDir = path.join(skitHome, 'sources', sourceType, name);
 
     if (fs.existsSync(targetDir)) {
-      console.log(chalk.dim(`  Skipping source "${name}" — directory already exists`));
+      console.log(format.dim(`  Skipping source "${name}" — directory already exists`));
       sourcesSkipped++;
       continue;
     }
 
-    let spinner;
-    try {
-      const ora = require('ora');
-      spinner = ora(`Cloning ${name}...`).start();
-    } catch {
-      console.log(chalk.cyan(`  Cloning ${name}...`));
-    }
+    const s = spinner(`Cloning ${name}...`).start();
 
     try {
       cloneRepo(origin, targetDir);
-      if (spinner) spinner.succeed(`Cloned ${name}`);
+      s.succeed(`Cloned ${name}`);
 
       addSource(skitHome, name, {
         type: sourceType,
@@ -210,8 +209,8 @@ async function clone(userOrUrl, options = {}) {
       });
       sourcesCloned++;
     } catch (err) {
-      if (spinner) spinner.fail(`Failed to clone ${name}`);
-      console.log(chalk.red(`  Error cloning "${name}": ${err.message}`));
+      s.fail(`Failed to clone ${name}`);
+      console.log(format.error(`  Error cloning "${name}": ${err.message}`));
     }
   }
 
@@ -229,7 +228,7 @@ async function clone(userOrUrl, options = {}) {
     if (importedFrom || sourceName === '_standalone') {
       const origin = sourceOrigins[sourceName];
       if (!origin) {
-        console.log(chalk.yellow(`  Skipping skill "${name}" — standalone/importedFrom (no source origin)`));
+        console.log(format.warn(`  Skipping skill "${name}" — standalone/importedFrom (no source origin)`));
         skillsSkipped++;
         continue;
       }
@@ -238,7 +237,7 @@ async function clone(userOrUrl, options = {}) {
     // Check if skill already installed
     const existingSkill = getSkill(skitHome, name);
     if (existingSkill) {
-      console.log(chalk.dim(`  Skipping skill "${name}" — already installed`));
+      console.log(format.dim(`  Skipping skill "${name}" — already installed`));
       skillsSkipped++;
       continue;
     }
@@ -246,7 +245,7 @@ async function clone(userOrUrl, options = {}) {
     // Find the source directory
     const sourceData = updatedSources[sourceName];
     if (!sourceData || !sourceData.path) {
-      console.log(chalk.yellow(`  Skipping skill "${name}" — source "${sourceName}" not available`));
+      console.log(format.warn(`  Skipping skill "${name}" — source "${sourceName}" not available`));
       skillsSkipped++;
       continue;
     }
@@ -258,7 +257,7 @@ async function clone(userOrUrl, options = {}) {
     const skillInfo = availableSkills.find((s) => s.name === name);
 
     if (!skillInfo) {
-      console.log(chalk.yellow(`  Skipping skill "${name}" — not found in source "${sourceName}"`));
+      console.log(format.warn(`  Skipping skill "${name}" — not found in source "${sourceName}"`));
       skillsSkipped++;
       continue;
     }
@@ -267,7 +266,7 @@ async function clone(userOrUrl, options = {}) {
     const targetPath = path.join(agentSkillDir, name);
 
     if (fs.existsSync(targetPath)) {
-      console.log(chalk.dim(`  Skipping skill "${name}" — already exists at target`));
+      console.log(format.dim(`  Skipping skill "${name}" — already exists at target`));
       skillsSkipped++;
       continue;
     }
@@ -282,15 +281,15 @@ async function clone(userOrUrl, options = {}) {
       });
       skillsLinked++;
     } catch (err) {
-      console.log(chalk.red(`  Failed to link skill "${name}": ${err.message}`));
+      console.log(format.error(`  Failed to link skill "${name}": ${err.message}`));
     }
   }
 
   // Summary
   console.log('');
-  console.log(chalk.green(`Clone complete:`));
-  console.log(chalk.dim(`  Sources: ${sourcesCloned} cloned, ${sourcesSkipped} skipped`));
-  console.log(chalk.dim(`  Skills:  ${skillsLinked} linked, ${skillsSkipped} skipped`));
+  console.log(format.success(`Clone complete:`));
+  console.log(format.dim(`  Sources: ${sourcesCloned} cloned, ${sourcesSkipped} skipped`));
+  console.log(format.dim(`  Skills:  ${skillsLinked} linked, ${skillsSkipped} skipped`));
   console.log('');
 }
 
