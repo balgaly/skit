@@ -7,3 +7,4 @@ node_modules/
 PROMPT.md
 docs/superpowers/
 docs/changes-review.html
+.mcp.json
