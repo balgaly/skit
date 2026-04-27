@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Try skit — The Package Manager for AI Agent Skills</title>
+<style>
+  :root {
+    --ink: #1a1523;
+    --ink-soft: #3d3654;
+    --muted: #6b6480;
+    --line: #e6e2ef;
+    --bg: #fbfaff;
+    --card: #ffffff;
+    --accent: #6c63ff;
+    --accent-soft: #f2f0ff;
+    --accent-dark: #4b44d1;
+    --good: #1f9d55;
+    --warn: #b86e00;
+    --code-bg: #0f0d18;
+    --code-ink: #e8e4f5;
+    --code-accent: #a89cff;
+    --shadow-sm: 0 1px 2px rgba(26, 21, 35, 0.06), 0 1px 3px rgba(26, 21, 35, 0.08);
+    --shadow-md: 0 4px 12px rgba(26, 21, 35, 0.08), 0 2px 4px rgba(26, 21, 35, 0.05);
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header.hero {
+    background: linear-gradient(135deg, #4b44d1 0%, #6c63ff 50%, #a89cff 100%);
+    color: #fff;
+    padding: 64px 24px 72px;
+    text-align: center;
+  }
+  header.hero h1 {
+    font-size: 48px;
+    margin: 0 0 12px;
+    letter-spacing: -1px;
+    font-weight: 700;
+  }
+  header.hero .tagline {
+    font-size: 20px;
+    margin: 0 auto 24px;
+    max-width: 620px;
+    opacity: 0.92;
+    font-weight: 400;
+  }
+  header.hero .badges {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .pill {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    backdrop-filter: blur(4px);
+  }
+  .pill.good { background: rgba(31, 157, 85, 0.9); }
+  .pill.dark { background: rgba(0, 0, 0, 0.25); }
+
+  main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  section { margin-bottom: 56px; }
+  section h2 {
+    font-size: 28px;
+    letter-spacing: -0.3px;
+    margin: 0 0 12px;
+    color: var(--ink);
+  }
+  section p.lede {
+    color: var(--ink-soft);
+    margin: 0 0 24px;
+    font-size: 17px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+  }
+  .card h3 {
+    margin: 0 0 8px;
+    font-size: 19px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card h3 .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .card p { margin: 0 0 12px; color: var(--ink-soft); }
+  .card p:last-child { margin-bottom: 0; }
+
+  pre.code {
+    position: relative;
+    background: var(--code-bg);
+    color: var(--code-ink);
+    padding: 16px 52px 16px 16px;
+    border-radius: 8px;
+    font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 13.5px;
+    line-height: 1.55;
+    overflow-x: auto;
+    margin: 12px 0;
+    white-space: pre;
+  }
+  pre.code .comment { color: #8a83a8; font-style: italic; }
+  pre.code .prompt { color: var(--code-accent); }
+  pre.code .flag { color: #ffb86c; }
+
+  .copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(168, 156, 255, 0.15);
+    border: 1px solid rgba(168, 156, 255, 0.35);
+    color: #d4ccff;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    transition: all 0.15s ease;
+    font-family: inherit;
+  }
+  .copy-btn:hover { background: rgba(168, 156, 255, 0.3); color: #fff; }
+  .copy-btn.copied { background: var(--good); color: #fff; border-color: var(--good); }
+
+  .journeys {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 24px;
+  }
+  @media (min-width: 780px) {
+    .journeys { grid-template-columns: 1fr 1fr; }
+    .journey-full { grid-column: 1 / -1; }
+  }
+
+  .journey {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow-sm);
+  }
+  .journey h3 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    color: var(--ink);
+  }
+  .journey .who {
+    font-size: 12px;
+    color: var(--accent-dark);
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .journey p { margin: 0 0 12px; color: var(--ink-soft); font-size: 15px; }
+
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+  }
+  .agent {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .agent-name { font-weight: 700; color: var(--ink); margin-bottom: 4px; font-size: 15px; }
+  .agent-status {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+  }
+  .agent-status.ready { background: #e4f5ec; color: var(--good); }
+  .agent-status.manual { background: #fff1e0; color: var(--warn); }
+  .agent p { margin: 6px 0 0; font-size: 13.5px; color: var(--muted); }
+
+  .next {
+    background: linear-gradient(135deg, var(--accent-soft) 0%, #efedff 100%);
+    border: 1px solid #e0dcf8;
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-top: 12px;
+  }
+  .next h3 { margin: 0 0 10px; color: var(--accent-dark); font-size: 19px; }
+  .next ul { margin: 0; padding-left: 22px; color: var(--ink-soft); }
+  .next li { margin-bottom: 6px; }
+
+  footer {
+    text-align: center;
+    padding: 32px 24px 48px;
+    color: var(--muted);
+    font-size: 14px;
+    border-top: 1px solid var(--line);
+    background: #fff;
+  }
+  footer a { color: var(--accent-dark); text-decoration: none; font-weight: 600; }
+  footer a:hover { text-decoration: underline; }
+
+  code.inline {
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.9em;
+  }
+
+  .quote {
+    border-left: 3px solid var(--accent);
+    padding: 4px 0 4px 16px;
+    margin: 16px 0;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>skit</h1>
+  <p class="tagline">The package manager for AI agent skills. Install, organize, and share skills across Claude Code, Cursor, and Windsurf — from one library.</p>
+  <div class="badges">
+    <span class="pill good">v1.2.1 on npm</span>
+    <span class="pill">Claude Code</span>
+    <span class="pill">Cursor</span>
+    <span class="pill">Windsurf</span>
+    <span class="pill dark">Windows · macOS · Linux</span>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>Install in 30 seconds</h2>
+  <p class="lede">Node 18+ and npm required. Everything else is a symlink.</p>
+
+  <div class="card">
+    <h3><span class="step-num">1</span> Install the CLI</h3>
+    <p>Package name is <code class="inline">skit-cli</code>. Binary name is <code class="inline">skit</code>.</p>
+    <pre class="code"><button class="copy-btn" data-copy="npm install -g skit-cli">Copy</button><span class="prompt">$</span> npm install -g skit-cli
+<span class="prompt">$</span> skit --version
+<span class="comment"># 1.2.1</span></pre>
+    <p style="font-size:13.5px;color:var(--muted);margin-top:8px"><strong>Linux/macOS tip:</strong> if <code class="inline">npm install -g</code> hits <code class="inline">EACCES</code>, set a user-local npm prefix once — avoids <code class="inline">sudo</code>:</p>
+    <pre class="code"><button class="copy-btn" data-copy="mkdir -p ~/.npm-global && npm config set prefix ~/.npm-global && echo 'export PATH=$HOME/.npm-global/bin:$PATH' >> ~/.profile && source ~/.profile">Copy</button><span class="prompt">$</span> mkdir -p ~/.npm-global
+<span class="prompt">$</span> npm config set prefix ~/.npm-global
+<span class="prompt">$</span> echo 'export PATH=$HOME/.npm-global/bin:$PATH' &gt;&gt; ~/.profile
+<span class="prompt">$</span> source ~/.profile</pre>
+  </div>
+
+  <div class="card">
+    <h3><span class="step-num">2</span> Pick your agent</h3>
+    <p>skit links skills into the directory your agent already reads from. Default is Claude Code.</p>
+    <pre class="code"><button class="copy-btn" data-copy="skit config set agent claude-code">Copy</button><span class="prompt">$</span> skit config set agent claude-code   <span class="comment"># ~/.claude/skills/</span>
+<span class="prompt">$</span> skit config set agent cursor        <span class="comment"># ~/.cursor/rules/</span>
+<span class="prompt">$</span> skit config set agent windsurf      <span class="comment"># ~/.windsurf/rules/</span></pre>
+  </div>
+
+  <div class="card">
+    <h3><span class="step-num">3</span> Launch the TUI (optional)</h3>
+    <p>Run <code class="inline">skit</code> with no arguments for an interactive menu — browse skills, manage sources, run actions without memorizing commands.</p>
+    <pre class="code"><button class="copy-btn" data-copy="skit">Copy</button><span class="prompt">$</span> skit</pre>
+  </div>
+</section>
+
+<section>
+  <h2>User journeys</h2>
+  <p class="lede">Pick the one that matches how you work. Run the commands. Watch your skills show up wherever your agent expects them.</p>
+
+  <div class="journeys">
+
+    <div class="journey">
+      <div class="who">Journey A</div>
+      <h3>Install real skills from GitHub</h3>
+      <p>Pull the official Anthropic skill pack and pick a few. Interactive checkbox picker appears automatically.</p>
+      <pre class="code"><button class="copy-btn" data-copy="skit install https://github.com/anthropics/skills">Copy</button><span class="prompt">$</span> skit install https://github.com/anthropics/skills
+<span class="prompt">$</span> skit list
+<span class="prompt">$</span> ls ~/.claude/skills/</pre>
+      <p>Skills live in <code class="inline">~/.skit/sources/</code>. Only symlinks land in your agent's skill dir.</p>
+    </div>
+
+    <div class="journey">
+      <div class="who">Journey B</div>
+      <h3>Keep everything fresh</h3>
+      <p>One command pulls every tracked source and relinks. No staleness.</p>
+      <pre class="code"><button class="copy-btn" data-copy="skit doctor">Copy</button><span class="prompt">$</span> skit doctor     <span class="comment"># health check</span>
+<span class="prompt">$</span> skit update     <span class="comment"># git pull on every source</span>
+<span class="prompt">$</span> skit update anthropics--skills <span class="comment"># just one</span></pre>
+      <p><code class="inline">doctor</code> flags broken links, missing sources, and updates available.</p>
+    </div>
+
+    <div class="journey journey-full">
+      <div class="who">Journey C — viral</div>
+      <h3>Clone someone's entire setup</h3>
+      <p>The headline feature. Shares a full skill library via a GitHub gist. Great for onboarding, new laptops, or lifting a teammate's setup wholesale. The <code class="inline">push</code> / <code class="inline">clone &lt;username&gt;</code> forms need the <code class="inline">gh</code> CLI (<a href="https://cli.github.com" style="color:var(--accent-dark)">cli.github.com</a>) authenticated. Offline form uses <code class="inline">profile import &lt;file&gt;</code>.</p>
+      <pre class="code"><button class="copy-btn" data-copy="skit profile export > my-skit-profile.json">Copy</button><span class="comment"># Capture your setup to a file</span>
+<span class="prompt">$</span> skit profile export &gt; my-skit-profile.json
+
+<span class="comment"># Share via gist (needs `gh auth login`)</span>
+<span class="prompt">$</span> skit profile push
+
+<span class="comment"># Adopt from a teammate — any of these work</span>
+<span class="prompt">$</span> skit profile import my-skit-profile.json   <span class="comment"># local file</span>
+<span class="prompt">$</span> skit clone &lt;github-username&gt;                <span class="comment"># their published gist</span>
+<span class="prompt">$</span> skit clone https://gist.github.com/.../raw/skit-profile.json  <span class="comment"># direct URL</span></pre>
+      <p>skit pulls the profile JSON, clones every listed source, and links every skill. One command, full setup.</p>
+    </div>
+
+    <div class="journey">
+      <div class="who">Journey D</div>
+      <h3>Move between agents</h3>
+      <p>One library, any agent. Switch without re-installing anything.</p>
+      <pre class="code"><button class="copy-btn" data-copy="skit config set agent cursor&#10;skit sync">Copy</button><span class="prompt">$</span> skit config set agent cursor
+<span class="prompt">$</span> skit sync
+<span class="prompt">$</span> ls ~/.cursor/rules/</pre>
+      <p><code class="inline">sync</code> rebuilds links from the manifest — same skills, new agent's directory.</p>
+    </div>
+
+    <div class="journey">
+      <div class="who">Journey E</div>
+      <h3>Import a single skill</h3>
+      <p>Got a gist, a subfolder in a repo, or just one raw URL? <code class="inline">skit import</code> figures it out.</p>
+      <pre class="code"><button class="copy-btn" data-copy="skit import https://gist.github.com/user/abc123">Copy</button><span class="prompt">$</span> skit import https://github.com/user/repo/tree/main/skills/thing
+<span class="prompt">$</span> skit import https://gist.github.com/user/abc123
+<span class="prompt">$</span> skit import https://raw.githubusercontent.com/user/repo/main/skill.md</pre>
+    </div>
+
+    <div class="journey">
+      <div class="who">Journey F</div>
+      <h3>Quarantine a project</h3>
+      <p>Block your global skills for one project. Useful when a global skill interferes, or you want a clean slate for a sensitive repo.</p>
+      <pre class="code"><button class="copy-btn" data-copy="skit incognito on">Copy</button><span class="prompt">$</span> cd /path/to/project
+<span class="prompt">$</span> skit incognito on
+<span class="prompt">$</span> skit incognito allow code-reviewer   <span class="comment"># whitelist one</span>
+<span class="prompt">$</span> skit incognito off</pre>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <h2>Works with your agent</h2>
+  <p class="lede">Skills are plain markdown with frontmatter. Every modern coding agent reads them — skit just puts them where each one looks.</p>
+  <div class="agent-grid">
+    <div class="agent">
+      <div class="agent-name">Claude Code</div>
+      <span class="agent-status ready">Native</span>
+      <p>Skills in <code class="inline">~/.claude/skills/</code>. Picked up automatically on next session.</p>
+    </div>
+    <div class="agent">
+      <div class="agent-name">Cursor</div>
+      <span class="agent-status ready">Native</span>
+      <p>Rules in <code class="inline">~/.cursor/rules/</code>. Switch with <code class="inline">skit config set agent cursor</code>.</p>
+    </div>
+    <div class="agent">
+      <div class="agent-name">Windsurf</div>
+      <span class="agent-status ready">Native</span>
+      <p>Rules in <code class="inline">~/.windsurf/rules/</code>. <code class="inline">skit config set agent windsurf</code>.</p>
+    </div>
+    <div class="agent">
+      <div class="agent-name">GitHub Copilot</div>
+      <span class="agent-status manual">Manual</span>
+      <p>No native adapter yet. Use skit to organize skills; paste content into Copilot instructions or prompts.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>What's coming next</h2>
+  <div class="next">
+    <h3>On the roadmap</h3>
+    <ul>
+      <li><strong>Skill versioning</strong> — pin a skill to a git SHA or tag; <code class="inline">skit update</code> respects pins.</li>
+      <li><strong>Skill dependencies</strong> — declare what a skill needs in its frontmatter; skit resolves the graph.</li>
+      <li><strong><code class="inline">skit init</code></strong> — <code class="inline">npm init</code> for skills. Scaffold a new skill repo with a frontmatter template.</li>
+      <li><strong>Copilot adapter</strong> — once the skill-file format stabilizes on Copilot's side.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Links</h2>
+  <div class="card">
+    <p>
+      <strong>npm:</strong> <a href="https://www.npmjs.com/package/skit-cli" style="color:var(--accent-dark); font-weight:600">npmjs.com/package/skit-cli</a><br>
+      <strong>GitHub:</strong> <a href="https://github.com/balgaly/skit" style="color:var(--accent-dark); font-weight:600">github.com/balgaly/skit</a><br>
+      <strong>Issues &amp; ideas:</strong> <a href="https://github.com/balgaly/skit/issues" style="color:var(--accent-dark); font-weight:600">github.com/balgaly/skit/issues</a>
+    </p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Built by Snir · <a href="https://www.npmjs.com/package/skit-cli">npm install -g skit-cli</a> · v1.2.1
+</footer>
+
+<script>
+(function () {
+  const buttons = document.querySelectorAll('.copy-btn');
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const text = btn.getAttribute('data-copy') || '';
+
+      // Tier 1 — Clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(
+          function () { flash(btn); },
+          function () { fallback(text, btn); }
+        );
+        return;
+      }
+      fallback(text, btn);
+    });
+  });
+
+  function fallback(text, btn) {
+    // Tier 2 — execCommand
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      ta.style.left = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) { flash(btn); return; }
+    } catch (e) { /* fall through */ }
+
+    // Tier 3 — prompt user to copy manually
+    window.prompt('Copy to clipboard:', text);
+  }
+
+  function flash(btn) {
+    const original = btn.textContent;
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    setTimeout(function () {
+      btn.textContent = original;
+      btn.classList.remove('copied');
+    }, 1400);
+  }
+})();
+</script>
+
+</body>
+</html>
