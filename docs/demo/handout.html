@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Try skit — The Package Manager for AI Agent Skills</title>
 <style>
   :root {
@@ -366,7 +367,7 @@
     <div class="journey journey-full">
       <div class="who">Journey C — viral</div>
       <h3>Clone someone's entire setup</h3>
-      <p>The headline feature. Shares a full skill library via a GitHub gist. Great for onboarding, new laptops, or lifting a teammate's setup wholesale. The <code class="inline">push</code> / <code class="inline">clone &lt;username&gt;</code> forms need the <code class="inline">gh</code> CLI (<a href="https://cli.github.com" style="color:var(--accent-dark)">cli.github.com</a>) authenticated. Offline form uses <code class="inline">profile import &lt;file&gt;</code>.</p>
+      <p>The headline feature. Shares a full skill library via a GitHub gist. Great for onboarding, new laptops, or lifting a teammate's setup wholesale. The <code class="inline">push</code> / <code class="inline">clone &lt;username&gt;</code> forms need the <code class="inline">gh</code> CLI (<a href="https://cli.github.com" rel="noreferrer" style="color:var(--accent-dark)">cli.github.com</a>) authenticated. Offline form uses <code class="inline">profile import &lt;file&gt;</code>.</p>
       <img class="demo" src="assets/clone-demo.gif" alt="skit clone rebuilding a full skill setup in seconds">
       <pre class="code"><button class="copy-btn" data-copy="skit profile export > my-skit-profile.json">Copy</button><span class="comment"># Capture your setup to a file</span>
 <span class="prompt">$</span> skit profile export &gt; my-skit-profile.json
@@ -385,18 +386,24 @@
       <div class="who">Journey D</div>
       <h3>Move between agents</h3>
       <p>One library, any agent. Switch without re-installing anything.</p>
-      <pre class="code"><button class="copy-btn" data-copy="skit config set agent cursor&#10;skit sync">Copy</button><span class="prompt">$</span> skit config set agent cursor
+      <pre class="code"><button class="copy-btn" data-copy="skit config set agent cursor">Copy</button><span class="prompt">$</span> skit config set agent cursor
 <span class="prompt">$</span> skit sync
 <span class="prompt">$</span> ls ~/.cursor/rules/</pre>
+      <p style="font-size:13px;color:var(--muted);margin-top:4px">Copy button takes the first command — run the rest one at a time.</p>
       <p><code class="inline">sync</code> rebuilds links from the manifest — same skills, new agent's directory.</p>
     </div>
 
     <div class="journey">
       <div class="who">Journey E</div>
       <h3>Import a single skill</h3>
-      <p>Got a gist, a subfolder in a repo, or just one raw URL? <code class="inline">skit import</code> figures it out.</p>
-      <pre class="code"><button class="copy-btn" data-copy="skit import https://gist.github.com/user/abc123">Copy</button><span class="prompt">$</span> skit import https://github.com/user/repo/tree/main/skills/thing
+      <p>Got a gist, a subfolder in a repo, or just one raw URL? <code class="inline">skit import</code> figures it out. Three examples — replace the URL with yours before running.</p>
+      <pre class="code"><button class="copy-btn" data-copy="skit import ">Copy</button><span class="comment"># GitHub subfolder</span>
+<span class="prompt">$</span> skit import https://github.com/user/repo/tree/main/skills/thing
+
+<span class="comment"># Gist</span>
 <span class="prompt">$</span> skit import https://gist.github.com/user/abc123
+
+<span class="comment"># Raw SKILL.md</span>
 <span class="prompt">$</span> skit import https://raw.githubusercontent.com/user/repo/main/skill.md</pre>
     </div>
 
@@ -457,9 +464,9 @@
   <h2>Links</h2>
   <div class="card">
     <p>
-      <strong>npm:</strong> <a href="https://www.npmjs.com/package/skit-cli" style="color:var(--accent-dark); font-weight:600">npmjs.com/package/skit-cli</a><br>
-      <strong>GitHub:</strong> <a href="https://github.com/balgaly/skit" style="color:var(--accent-dark); font-weight:600">github.com/balgaly/skit</a><br>
-      <strong>Issues &amp; ideas:</strong> <a href="https://github.com/balgaly/skit/issues" style="color:var(--accent-dark); font-weight:600">github.com/balgaly/skit/issues</a>
+      <strong>npm:</strong> <a href="https://www.npmjs.com/package/skit-cli" rel="noreferrer" style="color:var(--accent-dark); font-weight:600">npmjs.com/package/skit-cli</a><br>
+      <strong>GitHub:</strong> <a href="https://github.com/balgaly/skit" rel="noreferrer" style="color:var(--accent-dark); font-weight:600">github.com/balgaly/skit</a><br>
+      <strong>Issues &amp; ideas:</strong> <a href="https://github.com/balgaly/skit/issues" rel="noreferrer" style="color:var(--accent-dark); font-weight:600">github.com/balgaly/skit/issues</a>
     </p>
   </div>
 </section>
@@ -467,7 +474,7 @@
 </main>
 
 <footer>
-  Built by Snir · <a href="https://www.npmjs.com/package/skit-cli">npm install -g skit-cli</a> · v1.2.1
+  Built by Snir · <a href="https://www.npmjs.com/package/skit-cli" rel="noreferrer">npm install -g skit-cli</a> · v1.2.1
 </footer>
 
 <script>
