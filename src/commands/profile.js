@@ -35,8 +35,9 @@ function profileExport(options = {}) {
     exported: new Date().toISOString(),
     sources: Object.entries(sources).map(([name, data]) => {
       const entry = { name, type: data.type || 'external' };
-      if (data.origin) {
-        entry.origin = data.origin;
+      const origin = data.origin || data.url;
+      if (origin) {
+        entry.origin = origin;
       }
       return entry;
     }),
@@ -339,8 +340,9 @@ function profilePush(options = {}) {
     exported: new Date().toISOString(),
     sources: Object.entries(sources).map(([name, data]) => {
       const entry = { name, type: data.type || 'external' };
-      if (data.origin) {
-        entry.origin = data.origin;
+      const origin = data.origin || data.url;
+      if (origin) {
+        entry.origin = origin;
       }
       return entry;
     }),

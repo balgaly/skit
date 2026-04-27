@@ -275,6 +275,127 @@ describe('skit install', () => {
       assert.ok(fs.existsSync(path.join(agentSkillDir, 'url-skill')), 'url-skill should be linked');
     });
 
+    it('re-installing an existing source adds only unlinked skills', async () => {
+      const bareRepo = createBareRepoWithSkills(tmpDir, 'reenter-skills', [
+        { name: 'skill-one', description: 'one' },
+        { name: 'skill-two', description: 'two' },
+        { name: 'skill-three', description: 'three' },
+      ]);
+
+      // First install — --all installs everything
+      await captureStdout(() =>
+        install(bareRepo, { skitHome, agentSkillDir, all: true })
+      );
+      assert.ok(fs.existsSync(path.join(agentSkillDir, 'skill-one')));
+      assert.ok(fs.existsSync(path.join(agentSkillDir, 'skill-three')));
+
+      // Remove one skill from the manifest + filesystem to simulate the user
+      // having previously skipped it in the picker
+      const manifest = JSON.parse(fs.readFileSync(path.join(skitHome, 'manifest.json'), 'utf-8'));
+      delete manifest.skills['skill-two'];
+      fs.writeFileSync(path.join(skitHome, 'manifest.json'), JSON.stringify(manifest, null, 2));
+      fs.rmSync(path.join(agentSkillDir, 'skill-two'), { force: true, recursive: true });
+
+      // Re-install from same URL — should NOT error, should re-link skill-two only
+      const output = await captureStdout(() =>
+        install(bareRepo, { skitHome, agentSkillDir, all: true })
+      );
+
+      assert.ok(fs.existsSync(path.join(agentSkillDir, 'skill-two')), 'skill-two should be linked on re-install');
+      assert.ok(/already installed/i.test(output), 'output should mention source is already installed');
+    });
+
+    it('refuses to reuse an existing source when its remote URL differs', async () => {
+      const bareA = createBareRepoWithSkills(tmpDir, 'mismatch-skills', [
+        { name: 'from-a', description: 'a' },
+      ]);
+      await captureStdout(() =>
+        install(bareA, { skitHome, agentSkillDir, all: true })
+      );
+
+      // Tamper: point the existing clone's remote at a different URL, simulating
+      // either an attacker-planted source dir or a prior install from a different repo.
+      const clonedDir = path.join(skitHome, 'sources', 'external', 'mismatch-skills');
+      execFileSync('git', ['remote', 'set-url', 'origin', '/tmp/some-other-repo.git'], {
+        cwd: clonedDir,
+        stdio: 'pipe',
+      });
+
+      // Re-run install with the original URL — existing clone's remote no longer matches.
+      const output = await captureStdout(() =>
+        install(bareA, { skitHome, agentSkillDir, all: true })
+      );
+
+      assert.ok(/different remote/i.test(output), 'should refuse mismatched remote');
+    });
+
+    it('refuses to reuse a symlinked source directory', async () => {
+      const bareRepo = createBareRepoWithSkills(tmpDir, 'sym-skills', [
+        { name: 'sym-skill', description: 'x' },
+      ]);
+      // Create a symlink in place of the would-be source dir
+      const symTarget = path.join(tmpDir, 'decoy');
+      fs.mkdirSync(symTarget, { recursive: true });
+      const sourceDirSlot = path.join(skitHome, 'sources', 'external', 'sym-skills');
+      fs.mkdirSync(path.dirname(sourceDirSlot), { recursive: true });
+      fs.symlinkSync(symTarget, sourceDirSlot, process.platform === 'win32' ? 'junction' : 'dir');
+
+      const output = await captureStdout(() =>
+        install(bareRepo, { skitHome, agentSkillDir, all: true })
+      );
+
+      assert.ok(/symbolic link|refusing/i.test(output), 'should refuse symlinked slot');
+    });
+
+    it('preserves installedAt and origin across re-entry', async () => {
+      const bareRepo = createBareRepoWithSkills(tmpDir, 'preserve', [
+        { name: 'keep-a', description: 'a' },
+        { name: 'keep-b', description: 'b' },
+      ]);
+
+      await captureStdout(() =>
+        install(bareRepo, { skitHome, agentSkillDir, all: true })
+      );
+
+      const manifest1 = JSON.parse(fs.readFileSync(path.join(skitHome, 'manifest.json'), 'utf-8'));
+      const firstInstalledAt = manifest1.sources['preserve'].installedAt;
+      const firstOrigin = manifest1.sources['preserve'].origin;
+      assert.ok(firstInstalledAt, 'first install must record installedAt');
+      assert.ok(firstOrigin, 'first install must record origin');
+
+      // Remove one skill to force re-entry with real work
+      delete manifest1.skills['keep-a'];
+      fs.writeFileSync(path.join(skitHome, 'manifest.json'), JSON.stringify(manifest1, null, 2));
+      fs.rmSync(path.join(agentSkillDir, 'keep-a'), { force: true, recursive: true });
+
+      // Small delay to make any overwrite of installedAt detectable
+      await new Promise((r) => setTimeout(r, 10));
+
+      await captureStdout(() =>
+        install(bareRepo, { skitHome, agentSkillDir, all: true })
+      );
+
+      const manifest2 = JSON.parse(fs.readFileSync(path.join(skitHome, 'manifest.json'), 'utf-8'));
+      assert.equal(manifest2.sources['preserve'].installedAt, firstInstalledAt, 'installedAt must be preserved');
+      assert.equal(manifest2.sources['preserve'].origin, firstOrigin, 'origin must be preserved');
+    });
+
+    it('re-installing when nothing new is available reports cleanly', async () => {
+      const bareRepo = createBareRepoWithSkills(tmpDir, 'all-done-skills', [
+        { name: 'only-skill', description: 'done' },
+      ]);
+
+      await captureStdout(() =>
+        install(bareRepo, { skitHome, agentSkillDir, all: true })
+      );
+
+      const output = await captureStdout(() =>
+        install(bareRepo, { skitHome, agentSkillDir, all: true })
+      );
+
+      assert.ok(/already installed/i.test(output), 'should report nothing to add');
+    });
+
     it('clones with --own flag stores in sources/own/', async () => {
       const bareRepo = createBareRepoWithSkills(tmpDir, 'own-remote', [
         { name: 'own-git-skill', description: 'Own from git' },

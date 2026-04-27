@@ -6,10 +6,10 @@ const format = require('../ui/format');
 const { spinner } = require('../ui/spinner');
 const { pickSkills } = require('../ui/picker');
 
-const { cloneRepo } = require('../core/git');
+const { cloneRepo, getRemoteUrl } = require('../core/git');
 const { scanForSkills } = require('../core/scanner');
 const { linkSkill } = require('../core/linker');
-const { addSource, addSkill } = require('../core/manifest');
+const { addSource, addSkill, listSkills, getSource } = require('../core/manifest');
 const { resolveSkitHome, ensureDirs, getAgentAdapter } = require('../index');
 
 /**
@@ -67,34 +67,58 @@ async function install(source, options = {}) {
   let sourceDir;
   let sourceName;
 
+  let sourceAlreadyPresent = false;
+
   if (isGitUrl(source)) {
     // Git URL: clone to sources/<type>/<repo-name>/
     sourceName = extractRepoName(source);
     const targetDir = path.join(skitHome, 'sources', sourceType, sourceName);
 
     if (fs.existsSync(targetDir)) {
-      console.log(format.error(`Error: source "${sourceName}" already exists at ${targetDir}`));
-      return;
+      // Source already cloned — re-enter to add more skills instead of erroring.
+      // Refuse if the existing path is a symlink (defence against attacker-planted
+      // junctions pointing into sensitive trees).
+      const lst = fs.lstatSync(targetDir);
+      if (lst.isSymbolicLink()) {
+        console.log(format.error(`\n  Error: "${targetDir}" is a symbolic link, refusing to reuse for security reasons.`));
+        console.log(format.dim(`  Remove it manually if it is expected, then retry.`));
+        return;
+      }
+
+      // Verify the existing clone's remote matches the URL being installed.
+      // This blocks a silent source-swap when two URLs share the same owner--repo slot.
+      const existingRemote = getRemoteUrl(targetDir);
+      if (existingRemote && existingRemote !== source) {
+        console.log(format.error(`\n  Error: source "${sourceName}" already exists at ${targetDir} but points to a different remote:`));
+        console.log(format.dim(`    existing remote: ${existingRemote}`));
+        console.log(format.dim(`    requested URL:   ${source}`));
+        console.log(format.dim(`  Remove the existing source with \`skit remove --source ${sourceName}\` and retry.`));
+        return;
+      }
+
+      sourceAlreadyPresent = true;
+      console.log(format.dim(`  Source "${sourceName}" already installed — scanning for additional skills.`));
+      sourceDir = targetDir;
+    } else {
+      // Security warning for external sources
+      if (sourceType === 'external') {
+        console.log(format.warn(`\n  Warning: Installing skills from external source "${sourceName}"`));
+        console.log(format.dim(`  Review the skills before using them with sensitive code.\n`));
+      }
+
+      const s = spinner(`Cloning ${sourceName}...`).start();
+
+      try {
+        cloneRepo(source, targetDir);
+        s.succeed(`Cloned ${sourceName}`);
+      } catch (err) {
+        s.fail(`Failed to clone ${sourceName}`);
+        console.log(format.error(`Error: ${err.message}`));
+        return;
+      }
+
+      sourceDir = targetDir;
     }
-
-    // Security warning for external sources
-    if (sourceType === 'external') {
-      console.log(format.warn(`\n  Warning: Installing skills from external source "${sourceName}"`));
-      console.log(format.dim(`  Review the skills before using them with sensitive code.\n`));
-    }
-
-    const s = spinner(`Cloning ${sourceName}...`).start();
-
-    try {
-      cloneRepo(source, targetDir);
-      s.succeed(`Cloned ${sourceName}`);
-    } catch (err) {
-      s.fail(`Failed to clone ${sourceName}`);
-      console.log(format.error(`Error: ${err.message}`));
-      return;
-    }
-
-    sourceDir = targetDir;
   } else {
     // Local path
     const localDir = path.resolve(source);
@@ -122,11 +146,29 @@ async function install(source, options = {}) {
   }
 
   // Scan for skills
-  const skills = scanForSkills(sourceDir);
+  let skills = scanForSkills(sourceDir);
 
   if (skills.length === 0) {
     console.log(format.error(`No skills found in ${sourceDir}`));
     return;
+  }
+
+  // If the source is already installed, filter out skills we've already linked
+  // so the picker shows only what's new/unadded.
+  if (sourceAlreadyPresent) {
+    const installedNames = new Set(
+      Object.entries(listSkills(skitHome))
+        .filter(([, s]) => s.source === sourceName)
+        .map(([name]) => name)
+    );
+    const remaining = skills.filter((s) => !installedNames.has(s.name));
+    if (remaining.length === 0) {
+      console.log(format.success(`All skills from "${sourceName}" are already installed. Nothing to add.`));
+      console.log(format.dim(`  Run \`skit update ${sourceName}\` to refresh, or \`skit list --source ${sourceName}\` to see them.`));
+      return;
+    }
+    console.log(format.dim(`  ${installedNames.size} already installed, ${remaining.length} available to add.`));
+    skills = remaining;
   }
 
   // Determine which skills to install
@@ -151,12 +193,16 @@ async function install(source, options = {}) {
     }
   }
 
-  // Record the source in manifest
+  // Record the source in manifest — merge on re-entry so we preserve the
+  // original installedAt and don't null out origin if someone re-targets via
+  // a local path that happens to match a previously-git-installed slot.
+  const existingSource = sourceAlreadyPresent ? getSource(skitHome, sourceName) : null;
+  const newOrigin = isGitUrl(source) ? source : null;
   const sourceData = {
-    type: sourceType,
+    type: (existingSource && existingSource.type) || sourceType,
     path: sourceDir,
-    url: isGitUrl(source) ? source : null,
-    installedAt: new Date().toISOString(),
+    origin: newOrigin || (existingSource && existingSource.origin) || null,
+    installedAt: (existingSource && existingSource.installedAt) || new Date().toISOString(),
   };
   addSource(skitHome, sourceName, sourceData);
 
