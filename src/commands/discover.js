@@ -197,6 +197,19 @@ async function discover(options = {}) {
     console.log(format.warn('  Could not write backup — proceeding anyway.'));
   }
 
+  // Prune old backups — keep only the 5 most recent
+  try {
+    const backups = fs.readdirSync(skitHome)
+      .filter(f => f.startsWith('manifest.backup-') && f.endsWith('.json'))
+      .sort();
+    const toDelete = backups.slice(0, -5);
+    for (const f of toDelete) {
+      fs.unlinkSync(path.join(skitHome, f));
+    }
+  } catch {
+    // non-critical — ignore cleanup errors
+  }
+
   // Register selected skills (compatible with install schema)
   const skills = manifest.skills || {};
   for (const entry of selected) {
