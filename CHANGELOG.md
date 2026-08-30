@@ -5,6 +5,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.1] — 2026-04-27
+
+### Fixed
+- **Install re-entry** — reuse an already-cloned source to add more skills instead of hard-erroring. Reuse is refused if the existing dir is a symlink or has a different git remote. `installedAt` and origin are preserved on re-entry.
+- **Profile export** — reads origin with a `url` fallback for legacy manifests.
+- **Manifest** — source URL key renamed to `origin` for consistency with the export format.
+
+---
+
+## [1.2.0] — 2026-04-15
+
+### Added
+- **Interactive TUI** — running `skit` with no arguments opens a main menu. Browse registry, my skills, first-run onboarding, ASCII art header and rotating tips.
+- **`skit discover`** — detect existing skills on disk and onboard them. Also available as a TUI menu item. Discover output lists individual skill names with a global (path) scope label.
+- **Registry browse** — `src/core/registry.js` fetch, cache, and URL validation; TUI screens for browsing the registry and listing installed skills.
+- **Doctor discovery scan** — `skit doctor` includes a discovery scan.
+
+### Fixed
+- Security review: sanitize gist filenames with `path.basename`, cap redirect following at 5, reject `__proto__`/`constructor`/`prototype` as manifest keys, validate GitHub usernames before API calls, limit registry responses to 5MB, reject unsafe directory names during skill discovery.
+- Path separator and case-insensitive mislocated-skill detection.
+- TUI: back navigation, Ctrl-C during submitRepo, persist onboard flag only on explicit user choice.
+- URL validation and writeCache error handling in the registry.
+
+### Internal
+- UI helpers: `src/ui/spinner.js`, `src/ui/format.js`, `src/ui/picker.js`; command files migrated to those helpers.
+- Dependencies: `@inquirer/search`, `open@8`.
+- `SECURITY.md` vulnerability disclosure policy.
+- `.mcp.json` added to gitignore.
+
+---
+
 ## [1.1.0] — 2026-04-03
 
 ### Added
